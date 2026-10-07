@@ -1,0 +1,28 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Check core, AI providers and Markdown
+        run: ./scripts/check.sh
+      - name: Build app bundle
+        env:
+          CODESIGN_IDENTITY: '-'
+        run: ./scripts/build-app.sh
+      - name: Verify bundle
+        run: codesign --verify --deep --strict build/RayCompanion.app
+      - name: Archive app
+        run: ditto -c -k --sequesterRsrc --keepParent build/RayCompanion.app build/RayCompanion.zip
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: RayCompanion
+          path: build/RayCompanion.zip
