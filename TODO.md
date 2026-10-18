@@ -1,7 +1,7 @@
 - [x] Remove PhotoZoomUI and use native NSScrollView magnification. Signed build and 1,154 checks passed; native double-click zoom, Fit and outside dismissal verified. Reviewed MCP, history and shortcut library candidates.
 # Tasks
 
-- [ ] Remove unreachable Tinycast code found by Periphery: sixteen feature directories, the settings.json mirror, `AppIndex`, unused palette/dialog hooks and unused ChatCore types; drop the `tinycast://` scheme. TinycastKit fell from about 101k to 65k lines; build, signed bundle and all checks pass. The inline chat, Settings and dictation still need a physical pass in the installed app.
+- [ ] Remove unreachable Tinycast code found by Periphery: sixteen feature directories, the settings.json mirror, `AppIndex`, unused palette/dialog hooks and unused ChatCore types; drop the `tinycast://` scheme. A member-level pass with `scripts/unused.sh` removed about 4,400 more lines. TinycastKit fell from about 101k to 61k lines; build, signed bundle and all checks pass. The inline chat, Settings and dictation still need a physical pass in the installed app.
 
 - [ ] Review fixes from 16 October: share one local tool bridge across chats so Codex no longer relaunches between chats; always honor an extension's exported confirmation; stop leaked Raycast event taps from swallowing Tab; build 3 and release guards for the designated requirement and build number. Checks pass; physical Tab handoff and a Codex turn across two chats are not yet verified.
 

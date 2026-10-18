@@ -19,6 +19,8 @@ Periphery 3.8 (`periphery scan --retain-objc-accessible --retain-codable-propert
 
 `AppEntry` now lives in `Launcher/Service/AppEntry.swift`. `CommandID` keeps its cases as inert identifiers so the launcher-shaped palette, hotkey and settings switches stay intact; the four built-in quick-action names and symbols are inlined. `HotKeyAction` keeps only palette, dictation, command, app, settings-pane and extension-command bindings. `AppCore` no longer creates the removed stores at launch.
 
+A member-level pass followed. `scripts/unused.sh` runs the same Periphery scan. Every unused function, property and type it reported was removed and the package rebuilt, putting back any removal that broke the build. Parameters, assign-only properties, enum cases and initializers were left alone. Two rounds removed about 4,400 more lines. About 125 remaining findings are false positives; removing them breaks the build because SwiftUI, key paths or protocol conformances reach them.
+
 ## Still required by copied source
 
 The palette still treats the launcher as its home mode, so `PaletteMode`, `CommandID`, `CommandCatalog`, the ranking/alias/visibility/favorite stores and the extension subsystem (`ExtensionManager`, installer, store client) remain. The extension runtime also backs the imported AI tools. `AppSettings` still declares settings for removed features; Periphery's member-level report lists them for a later pass. Rebuilding the palette around AI alone would mean replacing upstream views, which AGENTS.md rules out.
