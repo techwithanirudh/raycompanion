@@ -412,25 +412,12 @@ extension View {
             .environment(core)
             .environment(core.settings)
             .environment(core.dictationCoordinator)
-
             .environment(core.hotKeys)
-
-
-
-
-
-
-
-
-
-
-
-
+            .environment(core.visibility)
+            .environment(core.aliases)
             .environment(core.aiSettings)
             .environment(core.mcpSettings)
             .environment(core.mcpCoordinator)
-
-
             .environment(core.chatGPTSubscription)
             .environment(core.installedAI)
             .scrollContentBackground(.hidden)

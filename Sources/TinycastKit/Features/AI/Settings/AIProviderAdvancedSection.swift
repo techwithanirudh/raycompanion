@@ -41,7 +41,7 @@ struct AIProviderAdvancedSection: View {
                 }
             } label: {
                 Text("Command path")
-                Text("Empty finds \(kind.command) the way Terminal does.")
+                Text("Leave empty to detect \(kind.command).")
             }
             .task(id: kind) { load() }
             .onChange(of: focus) { old, new in
@@ -57,7 +57,7 @@ struct AIProviderAdvancedSection: View {
                     .disabled(readFailed)
             } label: {
                 Text("Variables")
-                Text("Set for \(kind.title) only, each time it starts.")
+                Text("Applied when \(kind.title) starts.")
             }
             ForEach($variables) { $variable in
                 variableRow($variable)
@@ -113,7 +113,7 @@ struct AIProviderAdvancedSection: View {
         if readFailed { return "The variables could not be read from your login Keychain." }
         return saveFailed
             ? "The variables could not be saved to your login Keychain."
-            : "Values stay in your login Keychain. A change applies the next time \(kind.title) starts."
+            : "Changes apply the next time \(kind.title) starts."
     }
 
     private func note(for name: String) -> String? {

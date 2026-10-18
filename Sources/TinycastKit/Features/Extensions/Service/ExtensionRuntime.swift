@@ -21,8 +21,10 @@ protocol ExtensionRuntimeDelegate: AnyObject {
 
 /// The one `JSContext` a command runs in; every touch is on `queue`, only values cross.
 final class ExtensionRuntime: @unchecked Sendable {
-    private let queue: DispatchQueue
-    private var context: JSContext?
+    let queue: DispatchQueue
+    var context: JSContext?
+    var toolReply: CheckedContinuation<String, Error>?
+    var toolClock = ToolInvocationClock()
     private var timers: [String: DispatchSourceTimer] = [:]
     private var hostTasks: [String: Task<Void, Never>] = [:]
     private var generation = UUID()
@@ -159,7 +161,7 @@ final class ExtensionRuntime: @unchecked Sendable {
         queue.async { self.nodeShims.closeFiles() }
     }
 
-    private func onQueue(_ body: @escaping @Sendable (JSContext) -> Void) async {
+    func onQueue(_ body: @escaping @Sendable (JSContext) -> Void) async {
         await withCheckedContinuation { continuation in
             queue.async {
                 if let context = self.context { body(context) }
@@ -182,6 +184,8 @@ final class ExtensionRuntime: @unchecked Sendable {
         }
         let failed: @convention(block) (String, String) -> Void = { [weak self] session, message in
             guard let self else { return }
+            self.toolReply?.resume(throwing: RuntimeError.bootFailed(message))
+            self.toolReply = nil
             let delegate = self.delegate
             Task { @MainActor in delegate?.runtime(self, session: session, didFail: message) }
         }
@@ -335,6 +339,10 @@ final class ExtensionRuntime: @unchecked Sendable {
         let hostAPI = self.hostAPI
         Task { @MainActor in hostAPI.sessionEnded() }
         queue.async {
+            self.toolReply?.resume(throwing: CancellationError())
+            self.toolReply = nil
+            self.toolClock.timeout?.cancel()
+            self.toolClock.confirmation?.cancel()
             for timer in self.timers.values { timer.cancel() }
             self.timers.removeAll()
             for task in self.hostTasks.values { task.cancel() }

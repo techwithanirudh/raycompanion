@@ -4,7 +4,12 @@ import Observation
 import ChatCore
 
 @MainActor @Observable final class RaycastBridge {
-    var status = "Tab handoff paused"
+    var status = "Tab handoff paused" {
+        didSet {
+            guard status != oldValue, CommandLine.arguments.contains("--diagnostics") else { return }
+            FileHandle.standardOutput.write(Data("Raycast: \(status)\n".utf8))
+        }
+    }
     var isRunning = false
     private var engine: RaycastEventTap?
     private var timer: Timer?
@@ -39,8 +44,13 @@ import ChatCore
         if windowObserver?.pid != raycast.processIdentifier {
             windowObserver?.stop()
             windowObserver = RaycastWindowObserver(pid: raycast.processIdentifier) { [weak self] in
-                self?.resumeIfRootAvailable() ?? true
+                guard let self else { return true }
+                self.refresh()
+                return self.resumeIfRootAvailable() && self.isRunning
             }
+        }
+        guard RaycastEventTap.isFocused(pid: raycast.processIdentifier) else {
+            stopEngine(); status = "Ready when Raycast opens"; return
         }
         if engine?.pid == raycast.processIdentifier { return }
         stopEngine()

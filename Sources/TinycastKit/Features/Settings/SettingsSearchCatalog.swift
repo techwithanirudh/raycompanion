@@ -122,7 +122,7 @@ enum SettingsSearchCatalog {
             ]),
         .init(.aiDefault, "Default model", keywords: ["llm", "gpt", "claude", "grok"]),
         .init(.aiDefault, "Reasoning effort", keywords: ["thinking", "effort", "deepseek"]),
-        .init(.aiChat, "Web search", keywords: ["browse", "internet"]),
+        .init(.aiWebSearch, "Search type", keywords: ["web search", "browse", "internet", "exa", "api key"]),
         .init(.aiChat, "Tool call rounds", keywords: ["mcp", "tools", "limit", "loop", "agent", "unlimited"]),
         .init(
             .aiConversations, "Quick AI opens to",

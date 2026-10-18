@@ -13,6 +13,7 @@ import PermissionFlow
     private var destination: RaycastWindow?
     private var statusItem: NSStatusItem?
     private var chatReturn = InlineChatReturn()
+    private let permissionFlow = PermissionFlowController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let backgroundLaunch = CommandLine.arguments.contains("--background") || LaunchAtLogin.wasLaunchedAtLogin
@@ -55,7 +56,6 @@ import PermissionFlow
             guard let self else { return false }
             chatReturn.leave(); bridge.shouldResume = false
             destination = RaycastWindow()
-            ai.closeSettings()
             return ai.ask(prompt, at: appKitFrame(frame))
         }
         bridge.onRootOpened = { [weak self] frame in
@@ -68,8 +68,20 @@ import PermissionFlow
         if !settings.isTesting { bridge.start() }
         installMenu()
         if CommandLine.arguments.contains("--provider-fixture") { ai.configureFixture() }
+        if CommandLine.arguments.contains("--import-extensions") { ai.importRaycastTools() }
+        if !settings.isTesting && settings.interceptTab && !AXIsProcessTrusted()
+            && UserDefaults.standard.bool(forKey: "hasCompletedSetup") {
+            Task { @MainActor [weak self] in self?.showPermissionAlert() }
+        }
         if backgroundLaunch { return }
-        if CommandLine.arguments.contains("--alert-demo") { ai.previewAlert() }
+        if settings.isTesting && CommandLine.arguments.contains("--image-attachment-demo"),
+           let path = CommandLine.arguments.last {
+            ai.previewImageAttachment(at: URL(fileURLWithPath: path))
+        }
+        else if settings.isTesting && CommandLine.arguments.contains("--extension-tool-demo") { ai.previewExtensionTool() }
+        else if settings.isTesting && CommandLine.arguments.contains("--tools-demo") { ai.previewLocalTools() }
+        else if settings.isTesting && CommandLine.arguments.contains("--focus-demo") { ai.previewFocusTransitions() }
+        else if CommandLine.arguments.contains("--alert-demo") { ai.previewAlert() }
         else if settings.isTesting && CommandLine.arguments.contains("--editing-demo") {
             if CommandLine.arguments.contains("--inline-demo") { ai.show() }
             else { ai.continueInWindow() }
@@ -116,10 +128,6 @@ import PermissionFlow
         let menu = NSMenu()
         menu.addItem(withTitle: "Open RayCompanion", action: #selector(openChat), keyEquivalent: "")
         menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
-        let tab = menu.addItem(withTitle: "Open chat with Tab", action: #selector(toggleTab), keyEquivalent: "")
-        tab.state = settings.interceptTab ? .on : .off
-        menu.addItem(withTitle: "\(String(localized: PermissionFlowResources.accessibilityNameResource))…", action: #selector(openAccessibility), keyEquivalent: "")
-        menu.addItem(withTitle: "Replay setup…", action: #selector(replaySetup), keyEquivalent: "")
         menu.addItem(withTitle: "Check for updates…", action: #selector(checkForUpdates), keyEquivalent: "")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit RayCompanion", action: #selector(quit), keyEquivalent: "q")
@@ -171,9 +179,22 @@ import PermissionFlow
     }
     private func openMainWindow() {
         chatReturn.leave(); bridge.shouldResume = false; destination = nil
+        if ai.focusSettings() { return }
         ai.closeSettings()
         if onboarding.isInProgress || !UserDefaults.standard.bool(forKey: "hasCompletedSetup") { ai.closeChatWindow(); onboarding.show() }
         else { ai.continueInWindow() }
+    }
+    private func showPermissionAlert() {
+        guard !AXIsProcessTrusted() else { return }
+        let alert = NSAlert()
+        alert.messageText = "Enable chat from Raycast?"
+        alert.informativeText = "Allow access in System Settings to open chat with Tab in Raycast."
+        alert.addButton(withTitle: "Grant Access…")
+        alert.addButton(withTitle: "Not Now")
+        NSApp.activate(ignoringOtherApps: true)
+        if alert.runModal() == .alertFirstButtonReturn {
+            permissionFlow.authorize(pane: .accessibility, suggestedAppURLs: [Bundle.main.bundleURL])
+        }
     }
     @objc private func openChat() { openMainWindow() }
     @objc private func openSettings() { chatReturn.leave(); bridge.shouldResume = false; destination = nil; ai.settings() }
@@ -190,8 +211,6 @@ import PermissionFlow
             NSScreen.screens.first.map { CGRect(x: bounds.minX, y: $0.frame.maxY - bounds.maxY, width: bounds.width, height: bounds.height) }
         }
     }
-    @objc private func toggleTab(_ sender: NSMenuItem) { settings.interceptTab.toggle(); sender.state = settings.interceptTab ? .on : .off; bridge.refresh() }
-    @objc private func openAccessibility() { onboarding.show(step: 1) }
     @objc private func quit() { NSApp.terminate(nil) }
     @objc private func closeWindow() { NSApp.keyWindow?.performClose(nil) }
     @objc private func openHelp() { NSWorkspace.shared.open(URL(string: "https://github.com/techwithanirudh/raycompanion#readme")!) }

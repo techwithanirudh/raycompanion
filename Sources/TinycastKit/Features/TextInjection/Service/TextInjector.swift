@@ -193,19 +193,6 @@ final class TextInjector {
         }
     }
 
-    func captureExpansionContext(
-        target: InjectionTarget?,
-        clipboardHistory: [String]
-    ) -> SnippetTemplateEngine.ExpansionContext {
-        SnippetTemplateEngine.ExpansionContext(
-            clipboardHistory: clipboardHistory,
-            selection: selection(in: target),
-            now: Date(),
-            calendar: Calendar.current,
-            locale: Locale.current,
-            timeZone: .current)
-    }
-
     /// The caller must know there *is* a selection: a zero-length one inserts at the caret instead.
     func replaceSelection(
         with text: String,

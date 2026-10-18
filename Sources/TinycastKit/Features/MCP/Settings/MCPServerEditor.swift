@@ -101,7 +101,7 @@ struct MCPServerEditor: View {
                             .settingsEditorTextField()
                     }
                     field("Handle") {
-                        Text("@\(MCPSlug.normalize(name.isEmpty ? target.server.slug : name))")
+                        Text("@\(MCPSlug.make(from: name.isEmpty ? target.server.slug : name, existing: []))")
                             .foregroundStyle(.secondary)
                     }
                     field("Connection") {
@@ -161,10 +161,8 @@ struct MCPServerEditor: View {
                 } footer: {
                     Text(
                         kind == .http
-                            ? "Remote endpoints must use HTTPS. Credentials are stored in your "
-                                + "login Keychain, never in preferences."
-                            : "The command runs on this Mac with your own account. One "
-                                + "NAME=value per line; values are stored in your login Keychain."
+                            ? "Use an HTTPS endpoint."
+                            : "Enter one NAME=value per line."
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -188,8 +186,7 @@ struct MCPServerEditor: View {
                     }
                 } footer: {
                     Text(
-                        "Ask Each Chat puts the first tool call of every conversation through a "
-                            + "confirmation. Never Allow withholds the server without removing it."
+                        "Ask Each Chat requests approval before the first tool call."
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)

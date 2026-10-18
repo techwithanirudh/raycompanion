@@ -51,10 +51,10 @@ enum CommandID: String, CaseIterable, Sendable {
         switch self {
         case .quickAI: return "Quick AI"
         case .aiChat: return "AI Chat"
-        case .fixGrammar: return BuiltInQuickAction.fixGrammar.title
-        case .rewrite: return BuiltInQuickAction.rewrite.title
-        case .translate: return BuiltInQuickAction.translate.title
-        case .summarize: return BuiltInQuickAction.summarize.title
+        case .fixGrammar: return "Fix Grammar"
+        case .rewrite: return "Rewrite"
+        case .translate: return "Translate"
+        case .summarize: return "Summarize"
         case .calculatorHistory: return "Calculator History"
         case .clipboardHistory: return "Clipboard History"
         case .pasteSequentially: return "Paste Sequentially"
@@ -99,10 +99,10 @@ enum CommandID: String, CaseIterable, Sendable {
         switch self {
         case .quickAI: return "sparkles"
         case .aiChat: return "bubble.left.and.bubble.right"
-        case .fixGrammar: return BuiltInQuickAction.fixGrammar.symbol
-        case .rewrite: return BuiltInQuickAction.rewrite.symbol
-        case .translate: return BuiltInQuickAction.translate.symbol
-        case .summarize: return BuiltInQuickAction.summarize.symbol
+        case .fixGrammar: return "textformat"
+        case .rewrite: return "wand.and.sparkles"
+        case .translate: return "translate"
+        case .summarize: return "text.line.3.summary"
         case .calculatorHistory: return "plus.forwardslash.minus"
         case .clipboardHistory: return "doc.on.clipboard"
         case .pasteSequentially: return "list.bullet.clipboard"
@@ -127,7 +127,7 @@ enum CommandID: String, CaseIterable, Sendable {
         case .switchRoom: return "door.left.hand.open"
         case .createRoom: return "rectangle.stack.badge.plus"
         case .createQuicklink: return "link.badge.plus"
-        case .searchQuicklinks: return Quicklink.sfSymbol
+        case .searchQuicklinks: return "link"
         case .importQuicklinks: return "square.and.arrow.down"
         case .exportQuicklinks: return "square.and.arrow.up"
         case .searchSnippets: return "curlybraces"
@@ -140,26 +140,6 @@ enum CommandID: String, CaseIterable, Sendable {
         case .about: return "info.circle"
         case .support: return "heart"
         case .quit: return "power"
-        }
-    }
-
-    /// Exhaustive, so a fifth shipped action cannot reach the launcher without a row here.
-    init(_ action: BuiltInQuickAction) {
-        switch action {
-        case .fixGrammar: self = .fixGrammar
-        case .rewrite: self = .rewrite
-        case .translate: self = .translate
-        case .summarize: self = .summarize
-        }
-    }
-
-    var builtInQuickAction: BuiltInQuickAction? {
-        switch self {
-        case .fixGrammar: return .fixGrammar
-        case .rewrite: return .rewrite
-        case .translate: return .translate
-        case .summarize: return .summarize
-        default: return nil
         }
     }
 

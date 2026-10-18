@@ -102,8 +102,7 @@ struct AIConnectionEditorPanel: View {
                     }
                 } footer: {
                     Text(
-                        "Search the models available to this key and add one or more. Exact model "
-                            + "IDs remain available when discovery is unsupported."
+                        "Choose models or enter a model ID."
                     )
                     .font(.caption)
                     .foregroundStyle(.secondary)

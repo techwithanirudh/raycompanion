@@ -2,13 +2,18 @@ import SwiftUI
 
 /// The pane column: whichever pane the history currently points at.
 struct SettingsDetailView: View {
+    @Environment(AppCore.self) private var core
     @Environment(SettingsNavigationState.self) private var navigation
 
     var body: some View {
         // Not a `TabView`: `NSTabView` re-hosts on selection and breaks the recorder.
         Group {
             switch navigation.tab {
-            case .ai: AISettingsView()
+            case .ai:
+                AISettingsView()
+                    .environment(core.aiSettings)
+                    .environment(core.chatGPTSubscription)
+                    .environment(core.installedAI)
             case .dictation: DictationSettingsView()
             case .permissions: PermissionsSettingsView()
             case .about: AboutView()

@@ -12,7 +12,7 @@ RayCompanion has a small AppKit host and uses Tinycast's native chat and dictati
 | `Sources/TinycastKit/Features/MCP` | MCP transport, OAuth, tools and Keychain-backed secrets |
 | `Sources/TinycastKit/Features/Dictation` | Audio capture, speech models, shortcuts and text insertion |
 | `Sources/TinycastKit/Features/Updates` | Sparkle controller and update preferences |
-| `Sources/ChatCore` | Prompt gating, dismissal state and small transport/storage models |
+| `Sources/ChatCore` | Root-search gating and inline-chat dismissal state |
 | `Sources/DictationHelper` | Separate speech-model worker |
 
 `AppDelegate` creates the host, starts `AppCore.startAIOnly()` through the adapter, and owns the Raycast handoff. Normal app opening shows unfinished setup or the full chat window. Login launches stay in the background. Raycast Tab opens the original inline AI screen at Raycast's captured position.

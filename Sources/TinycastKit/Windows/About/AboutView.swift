@@ -37,10 +37,6 @@ struct AboutView: View {
             }
             .formStyle(.grouped)
             .settingsScrollTarget(.about)
-
-            // Outside the form, so the copyright stays pinned to the bottom edge.
-            footer
-                .padding(.bottom, Theme.Spacing.xxl)
         }
     }
 
@@ -74,9 +70,4 @@ struct AboutView: View {
         }
     }
 
-    private var footer: some View {
-        Text("RayCompanion · Your Raycast companion")
-            .font(.caption2)
-            .foregroundStyle(.tertiary)
-    }
 }

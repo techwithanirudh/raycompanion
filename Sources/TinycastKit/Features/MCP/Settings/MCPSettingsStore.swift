@@ -12,7 +12,9 @@ final class MCPSettingsStore {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        servers = Self.decode(defaults.data(forKey: AppSettingsKey.mcpServers.rawValue))
+        let decoded = Self.decode(defaults.data(forKey: AppSettingsKey.mcpServers.rawValue))
+        servers = Self.releasingReservedSlugs(decoded)
+        if servers != decoded { persist() }
     }
 
     func server(id: UUID) -> MCPServer? {
@@ -49,12 +51,22 @@ final class MCPSettingsStore {
     private func normalized(_ server: MCPServer) -> MCPServer {
         var server = server
         server.name = server.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        let taken = Set(servers.filter { $0.id != server.id }.map(\.slug))
+        let taken = Set(servers.filter { $0.id != server.id }.map(\.slug)).union(MCPSlug.reserved)
         let derived = MCPSlug.normalize(server.name.isEmpty ? server.slug : server.name)
         if server.slug != derived || taken.contains(server.slug) {
             server.slug = MCPSlug.make(from: derived, existing: taken)
         }
         return server
+    }
+
+    /// A server saved before the app's own handle was reserved moves aside, as a new one would.
+    static func releasingReservedSlugs(_ servers: [MCPServer]) -> [MCPServer] {
+        var result = servers
+        for index in result.indices where MCPSlug.reserved.contains(result[index].slug) {
+            let taken = Set(result.map(\.slug))
+            result[index].slug = MCPSlug.make(from: result[index].slug, existing: taken)
+        }
+        return result
     }
 
     private func persist() {

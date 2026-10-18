@@ -3,14 +3,7 @@ import SwiftUI
 struct RootPaletteView: View {
     @Environment(AppCore.self) private var core
     @Environment(PaletteState.self) private var vm
-    @Environment(FavoritesStore.self) private var favorites
-    @Environment(VisibilityStore.self) private var visibility
     @Environment(FileSearchSession.self) private var fileSearch
-    @Environment(DictionarySession.self) private var dictionary
-    @Environment(MenuSearchSession.self) private var menuSearch
-    @Environment(WindowSwitchSession.self) private var windowSwitch
-    @Environment(CalendarStore.self) private var calendarStore
-    @Environment(UninstallSession.self) private var uninstall
     @Environment(ExtensionManager.self) private var extensions
     @Environment(AppSettings.self) private var settings
     @Environment(\.metrics) private var metrics
@@ -105,19 +98,6 @@ struct RootPaletteView: View {
             })
     }
 
-    /// All Categories stays above the divider; the remaining rows match their section order.
-    private var emojiCategoryContent: PopoverMenuContent {
-        PopoverMenuContent(
-            items: EmojiCategoryFilter.allCases.enumerated().map { index, filter in
-                PopoverMenuItem(
-                    title: filter.title, systemImage: filter.systemImage,
-                    startsSection: index == 1
-                ) {
-                    vm.emojiCategoryFilter = filter
-                }
-            })
-    }
-
     private var appMenuContent: PopoverMenuContent {
         let appName = Bundle.main.appDisplayName
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
@@ -161,8 +141,6 @@ struct RootPaletteView: View {
                 clipboardFilterContent, width: metrics.size.clipboardFilterMenuWidth)
         case .fileSearchFilter:
             return headerMenu(fileSearchFilterContent, width: metrics.size.fileSearchFilterMenuWidth)
-        case .emojiCategory:
-            return headerMenu(emojiCategoryContent, width: metrics.size.emojiCategoryMenuWidth)
         case .aiModel:
             return headerMenu(
                 AIModelMenu.models(coordinator: core.aiChatCoordinator, chat: quickAI),
@@ -277,9 +255,6 @@ struct RootPaletteView: View {
                 if vm.collapseQueryLineBreaks() { return }
                 land()
                 if vm.mode == .fileSearch { fileSearch.search(vm.query, filter: vm.fileSearchFilter) }
-                if vm.mode == .dictionary { dictionary.lookUp(vm.query) }
-                if vm.mode == .menuSearch { menuSearch.filter(vm.query) }
-                if vm.mode == .switchWindows { windowSwitch.filter(vm.query) }
                 // A command that took over the search text filters its own list.
                 if vm.mode == .extensionCommand, let handler = extensionScreen.searchTextHandler {
                     extensions.dispatch(handler: handler, arguments: [vm.query])
@@ -301,29 +276,16 @@ struct RootPaletteView: View {
             .onChange(of: vm.mode) {
                 vm.clipboardFilter = .all
                 vm.fileSearchFilter = .all
-                vm.emojiCategoryFilter = .all
-                vm.emojiGridColumnsOverride = nil
                 vm.fileSearchQuickLook = false
                 if menuOpen { closeMenus() }
                 land()
                 searchFocused = !screen.hidesSearchField
-                // Every way out of the Uninstall screen: back chevron, bare backspace, a fresh summon.
-                if vm.mode != .uninstall { uninstall.cancel() }
                 // Entering with no query is the blank screen's own request for recents.
                 if vm.mode == .fileSearch {
                     fileSearch.search(vm.query, filter: vm.fileSearchFilter)
                 } else {
                     fileSearch.cancel()
                 }
-                if vm.mode == .dictionary {
-                    dictionary.lookUp(vm.query)
-                } else {
-                    dictionary.reset()
-                }
-                if vm.mode != .menuSearch { menuSearch.reset() }
-                if vm.mode != .switchWindows { windowSwitch.reset() }
-                if vm.mode != .meetingDetails { calendarStore.clearDetails() }
-                if vm.mode != .rooms, vm.mode != .roomWindows { core.roomCoordinator.screensDidClose() }
                 // Leaving the screen any other way than Escape still ends the command's session.
                 if vm.mode != .extensionCommand, extensions.running != nil, !extensions.isAuthorizing {
                     Task { await extensions.stop() }
@@ -592,15 +554,6 @@ struct RootPaletteView: View {
                     title: vm.fileSearchFilter.title, systemImage: vm.fileSearchFilter.systemImage,
                     isOpen: openMenu == .fileSearchFilter, help: "Filter by type  ⌘P",
                     action: toggleFileSearchFilter)
-            }
-            if !isCollapsed, vm.mode == .emoji {
-                headerGutter(width: metrics.spacing.md)
-                HeaderMenuButton(
-                    title: vm.emojiCategoryFilter.title,
-                    systemImage: vm.emojiCategoryFilter.systemImage,
-                    isOpen: openMenu == .emojiCategory,
-                    help: "Filter by category  ⌘P",
-                    action: toggleEmojiCategory)
             }
             if !isCollapsed, vm.mode == .ai {
                 headerGutter(width: metrics.spacing.md)
@@ -876,20 +829,10 @@ struct RootPaletteView: View {
         case .extensionAccessory: toggleExtensionSearchAccessory()
         case .clipboardFilter: toggleClipboardFilter()
         case .fileSearchFilter: toggleFileSearchFilter()
-        case .emojiCategory: toggleEmojiCategory()
         case .aiModel: toggleAIModel()
         case .ignored: return false
         }
         return true
-    }
-
-    private func toggleEmojiCategory() {
-        if openMenu == .emojiCategory {
-            closeMenus()
-            return
-        }
-        let active = EmojiCategoryFilter.allCases.firstIndex(of: vm.emojiCategoryFilter) ?? 0
-        open(.emojiCategory, highlighting: active)
     }
 
     /// Opens on the choice the dropdown holds, exactly as the clipboard filter opens on its own.
@@ -1110,7 +1053,7 @@ struct RootPaletteView: View {
         case .app: .bottomLeading
         case .actions: .bottomTrailing
         case .argumentOptions: .belowHeaderTrailing
-        case .clipboardFilter, .fileSearchFilter, .emojiCategory, .aiModel, .aiReasoning,
+        case .clipboardFilter, .fileSearchFilter, .aiModel, .aiReasoning,
             .aiAttachments, .extensionAccessory:
             .belowHeaderTrailing
         case nil: nil
@@ -1312,7 +1255,6 @@ private enum OpenMenu {
     case app
     case clipboardFilter
     case fileSearchFilter
-    case emojiCategory
     case aiModel
     case aiReasoning
     case aiAttachments

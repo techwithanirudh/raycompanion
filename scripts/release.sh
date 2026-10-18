@@ -16,6 +16,17 @@ bundle_key=$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' build/RayCompanio
 [[ "$public_key" == "$bundle_key" ]] || { print -u2 'The release signing key does not match the app.'; exit 1; }
 codesign --verify --deep --strict build/RayCompanion.app
 codesign -dvvv build/RayCompanion.app 2>&1 | grep -q 'Authority=' || { print -u2 'Releases need a stable signing identity.'; exit 1; }
+requirement=$(codesign -d -r- build/RayCompanion.app 2>&1 | sed -n 's/^designated => //p')
+[[ "$requirement" == "$(<Resources/DesignatedRequirement.txt)" ]] || {
+    print -u2 "The signed app's designated requirement changed, so users would lose permissions:"
+    print -u2 "  built:    $requirement"
+    print -u2 "  expected: $(<Resources/DesignatedRequirement.txt)"
+    exit 1
+}
+build=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' Resources/Info.plist)
+feed=$(/usr/libexec/PlistBuddy -c 'Print :SUFeedURL' Resources/Info.plist)
+published=$(curl -fsSL "$feed" 2>/dev/null | sed -n 's:.*<sparkle\:version>\([0-9][0-9]*\)</sparkle\:version>.*:\1:p' | sort -n | tail -1)
+[[ -z "$published" || "$build" -gt "$published" ]] || { print -u2 "CFBundleVersion $build must be greater than the published build $published."; exit 1; }
 release_dir="$repo_dir/build/releases/v$version"
 mkdir -p "$release_dir"
 ditto -c -k --sequesterRsrc --keepParent build/RayCompanion.app "$release_dir/RayCompanion.zip"

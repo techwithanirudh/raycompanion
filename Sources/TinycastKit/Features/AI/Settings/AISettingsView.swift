@@ -15,9 +15,7 @@ struct AISettingsView: View {
         return Form {
             Section {
                 Toggle(isOn: $appSettings.aiEnabled) {
-                    SettingsFeatureToggleLabel(
-                        anchor: .aiAI, title: "Enable AI",
-                        subtitle: "Nothing is loaded or sent while it is off.")
+                    SettingsRowTitle(.aiAI, "Enable AI")
                 }
                 SettingsRow(
                     title: "Providers", subtitle: providerSummary, anchor: .aiProviders
@@ -28,11 +26,14 @@ struct AISettingsView: View {
                 SettingsSectionHeader(.aiAI)
             }
 
-            FeatureCommandsSection(owner: .ai, anchor: .aiCommands)
+            AICommandsSettings()
                 .settingsEnabled(appSettings.aiEnabled)
 
             Group {
                 defaultModelSection
+                WebSearchSettings()
+                AILocalToolsSettings()
+                AIExtensionToolsSettings()
                 chatSection
                 conversationsSection
                 systemPromptSection
@@ -80,19 +81,10 @@ struct AISettingsView: View {
         } header: {
             SettingsSectionHeader(.aiDefault)
         } footer: {
-            Text(defaultModelFooter)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            if settings.defaultModel == nil {
+                Text("Choose a model to start chatting.")
+            }
         }
-    }
-
-    private var defaultModelFooter: String {
-        if settings.defaultModel?.isOnDevice == true {
-            return "Apple Intelligence runs on this Mac. Nothing leaves it."
-        }
-        return settings.defaultModel == nil
-            ? "Turn on Apple Intelligence, or add a provider above."
-            : "Only the selected provider is contacted."
     }
 
     /// Why the on-device route is missing from the picker, or `nil` when it is there.
@@ -121,18 +113,11 @@ struct AISettingsView: View {
     private var chatSection: some View {
         @Bindable var settings = settings
         return Section {
-            Toggle(isOn: $settings.webSearchEnabled) {
-                SettingsRowTitle(.aiChat, "Provider web search")
-                Text("Codex and OpenRouter only. Prompts go to a search engine.")
-            }
-            ExaSearchSettings()
             Picker(selection: $settings.toolRounds) {
                 ForEach(AIToolRounds.allCases) { Text($0.title).tag($0) }
             } label: {
                 SettingsRowTitle(.aiChat, "Tool call rounds")
-                Text(
-                    "A reply stops after this many; Unlimited runs until Stop. "
-                        + "API connections, Codex and Claude.")
+                Text("Maximum tool rounds per reply.")
             }
         } header: {
             SettingsSectionHeader(.aiChat)
@@ -145,27 +130,24 @@ struct AISettingsView: View {
             Picker(selection: $settings.opensTo) {
                 ForEach(AIOpensTo.allCases) { Text($0.title).tag($0) }
             } label: {
-                SettingsRowTitle(.aiConversations, "Quick AI opens to")
+                SettingsRowTitle(.aiConversations, "Quick Chat opens to")
+                if settings.opensTo == .temporary { Text("Not saved to history.") }
             }
             if settings.opensTo == .recent {
                 Picker(selection: $settings.newChatAfter) {
                     ForEach(AINewChatAfter.allCases) { Text($0.title).tag($0) }
                 } label: {
-                    SettingsRowTitle(.aiConversations, "Start a new conversation after")
+                    SettingsRowTitle(.aiConversations, "Start a new chat after")
                 }
             }
             Picker(selection: $settings.retention) {
                 ForEach(AIRetention.allCases) { Text($0.title).tag($0) }
             } label: {
                 SettingsRowTitle(.aiConversations, "Keep conversations")
-                Text("Older ones are deleted, except pinned chats.")
+                Text("Pinned chats are kept.")
             }
         } header: {
             SettingsSectionHeader(.aiConversations)
-        } footer: {
-            Text("Conversations stay on this Mac, outside settings backups.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 
@@ -173,15 +155,14 @@ struct AISettingsView: View {
         @Bindable var settings = settings
         return Section {
             Toggle(isOn: $settings.systemPromptEnabled) {
-                SettingsRowTitle(.aiSystemPrompt, "Send a system prompt")
-                Text("Off also skips RayCompanion's own prompt.")
+                SettingsRowTitle(.aiSystemPrompt, "Use custom instructions")
             }
             SystemPromptEditor(text: $settings.systemPrompt)
                 .settingsEnabled(settings.systemPromptEnabled)
         } header: {
             SettingsSectionHeader(.aiSystemPrompt)
         } footer: {
-            Text("Sent before every message, after RayCompanion's own. Both are billed each turn.")
+            Text("Applied to every message. Turning this off also disables the default instructions.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

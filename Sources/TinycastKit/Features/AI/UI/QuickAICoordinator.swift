@@ -43,7 +43,7 @@ final class QuickAICoordinator {
             show()
             return paletteCoordinator.isShowing(.ai)
         }
-        chat.startNewChat()
+        chat.startNewChat(temporary: core.aiSettings.opensTo == .temporary)
         paletteCoordinator.showPalette(mode: .ai)
         return send(prompt)
     }
@@ -68,6 +68,7 @@ final class QuickAICoordinator {
     private func applyOpenPolicy() {
         // A reply still arriving was asked for; resetting would discard the answer.
         guard !chat.isStreaming else { return }
+        chat.setTemporaryIfEmpty(core.aiSettings.opensTo == .temporary)
         let recent = core.chatHistory.conversations.first
         let hasTranscript = !chat.session.messages.isEmpty
         // Staged files are unsent work: neither branch may throw them away on a plain re-summon.
@@ -85,7 +86,7 @@ final class QuickAICoordinator {
         case .startNew:
             // An empty chat is already new; resetting it would only drop what is staged in it.
             guard hasTranscript else { return }
-            chat.startNewChat()
+            chat.startNewChat(temporary: core.aiSettings.opensTo == .temporary)
         }
     }
 
@@ -95,7 +96,7 @@ final class QuickAICoordinator {
     }
 
     func startNewChat() {
-        chat.startNewChat()
+        chat.startNewChat(temporary: core.aiSettings.opensTo == .temporary)
         // A fresh conversation, not a fresh root: whatever opened chat is still behind it.
         palette.replace(mode: .ai)
     }

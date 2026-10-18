@@ -18,6 +18,16 @@ struct AIChatTests {
     }
 
     static func main() async {
+        if ProcessInfo.processInfo.environment["RAYCOMPANION_CODEX_TOOL_PROBE"] == "1" {
+            await codexToolProbe()
+            return
+        }
+        await localTools()
+        toolCallsRouteByExactOfferedName()
+        theLocalHandleIsReserved()
+        await theLocalToolServerRecoversAndCancels()
+        await toolTimeoutsSkipTheConfirmation()
+        await temporaryChatsStayOutOfHistory()
         chatNeverInheritsTheCollapsedSearchHeight()
         companionOnlyOpensChatScreens()
         sessionSummariesAndRequests()
@@ -1376,6 +1386,32 @@ extension AIChatTests {
         expect(
             store.session(id: chat.session.id)?.messages.map(\.text) == ["Why?", "Second"],
             "the stored transcript holds only the new reply")
+    }
+
+    static func temporaryChatsStayOutOfHistory() async {
+        let (store, directory) = temporaryStore("temporary-chat")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let chats = AIChatSurfacesState(history: store)
+        let chat = chats.quickAI
+        chat.startNewChat(temporary: true)
+        let provider = ScriptedProvider(rounds: [[.text("Answer"), .finished]])
+        chat.send("Question", using: provider)
+        expect(store.conversation(id: chat.session.id) == nil, "temporary chat is absent while streaming")
+        await settle(chat)
+        expect(store.conversation(id: chat.session.id) == nil, "temporary chat is absent after completion")
+        let reopened = ChatHistoryStore(directory: directory)
+        reopened.load()
+        expect(reopened.conversations.isEmpty, "temporary chat was never written to disk")
+        chats.continueQuickAIInWindow()
+        expect(!chats.window.isTemporary, "continuing in Chat keeps the conversation")
+        expect(store.session(id: chat.session.id)?.messages.count == 2, "continuing saves the full transcript")
+        chats.quickAI.startNewChat(temporary: true)
+        let stalled = StalledProvider()
+        chats.quickAI.send("Another", using: stalled)
+        chats.quickAI.cancel()
+        expect(store.conversation(id: chats.quickAI.session.id) == nil, "cancel does not save a temporary chat")
+        chats.quickAI.startNewChat()
+        expect(!chats.quickAI.isTemporary, "a regular new chat saves normally")
     }
 
     static func requestsIdentifyTheirConversation() async {

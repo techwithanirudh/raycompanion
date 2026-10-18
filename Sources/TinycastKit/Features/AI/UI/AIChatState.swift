@@ -5,6 +5,7 @@ import Observation
 @Observable
 final class AIChatState {
     private(set) var session = ChatSession()
+    private(set) var isTemporary = false
     private(set) var isStreaming = false
     private(set) var isThinking = false
     private(set) var notice: String?
@@ -61,7 +62,7 @@ final class AIChatState {
     /// The chat's own route from now on; a saved chat records it at once, a new one on first send.
     func setModel(_ model: AIModelSelection) {
         session.model = model
-        history.setModel(model, id: session.id)
+        if !isTemporary { history.setModel(model, id: session.id) }
     }
 
     /// Asks again for the last reply; the question and its attachments go out as they first did.
@@ -90,7 +91,7 @@ final class AIChatState {
         isStreaming = true
         isThinking = false
         reasoningStartedAt = nil
-        history.save(session)
+        if !isTemporary { history.save(session) }
 
         replyGeneration += 1
         let generation = replyGeneration
@@ -165,11 +166,22 @@ final class AIChatState {
         finishLast(state: .failed, fallback: "Cancelled")
     }
 
-    func startNewChat() {
+    func startNewChat(temporary: Bool = false) {
         cancel()
         session = ChatSession()
+        isTemporary = temporary
         notice = nil
         clearStaging()
+    }
+
+    func setTemporaryIfEmpty(_ temporary: Bool) {
+        guard session.messages.isEmpty else { return }
+        isTemporary = temporary
+    }
+
+    func keepConversation() {
+        isTemporary = false
+        if !session.messages.isEmpty { history.save(session) }
     }
 
     /// Staged images belong to the conversation they were picked in; leaving it drops them.
@@ -179,6 +191,7 @@ final class AIChatState {
         guard let loaded = history.session(id: id) else { return false }
         cancel()
         session = loaded
+        isTemporary = false
         notice = nil
         clearStaging()
         return true
@@ -329,7 +342,7 @@ final class AIChatState {
         // A call still running when the turn ends never reported back, whatever ended the turn.
         message.toolUses = message.toolUses.map { Self.settled($0) }
         session.replaceLast(with: message)
-        history.save(session)
+        if !isTemporary { history.save(session) }
         isStreaming = false
         isThinking = false
         replyTask = nil

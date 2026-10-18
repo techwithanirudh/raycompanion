@@ -9,7 +9,7 @@
 	<key>CFBundleIconFile</key>
 	<string>RayCompanion</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.anirudh.quickchat</string>
+	<string>com.anirudh.raycompanion</string>
 	<key>CFBundleName</key>
 	<string>RayCompanion</string>
 	<key>CFBundlePackageType</key>
@@ -24,13 +24,11 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>raycompanion</string>
-				<string>quickchat</string>
-				<string>tinycast</string>
 			</array>
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>2</string>
+	<string>3</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>26.0</string>
 	<key>LSUIElement</key>

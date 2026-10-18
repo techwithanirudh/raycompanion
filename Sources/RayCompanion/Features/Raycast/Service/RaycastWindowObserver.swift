@@ -29,14 +29,16 @@ import ApplicationServices
         activation = NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main) { [weak self] notification in
             guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication else { return }
             MainActor.assumeIsolated {
-                guard let self, app.processIdentifier == self.pid else { return }
-                self.schedule()
+                guard let self else { return }
+                if app.processIdentifier == self.pid { self.schedule() }
+                else { _ = self.onChange() }
             }
         }
     }
 
     private func schedule() {
         pending?.cancel()
+        guard !onChange() else { return }
         pending = Task { @MainActor [weak self] in
             for delay in [80, 100, 160, 240, 400] {
                 do { try await Task.sleep(for: .milliseconds(delay)) } catch { return }

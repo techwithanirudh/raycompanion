@@ -38,8 +38,9 @@ final class MCPCoordinator {
     /// The Codex helper keeps what it was launched with, so a server taken away is taken from it.
     private func dropWithdrawnServers(besides withdrawn: UUID? = nil) {
         let offered = store.enabledServers.filter { $0.trust != .never && $0.id != withdrawn }
-        core.chatGPTSubscription.dropWithdrawnServers(
-            keeping: isActive ? Set(offered.map(\.slug)) : [])
+        var keeping = isActive ? Set(offered.map(\.slug)) : []
+        if core.localTools.enabled { keeping.insert(AILocalTools.handle) }
+        core.chatGPTSubscription.dropWithdrawnServers(keeping: keeping)
     }
 
     /// Connecting on the way into chat, so the first send does not wait on every handshake.
@@ -104,18 +105,24 @@ final class MCPCoordinator {
     /// Consent for a call a vendor CLI is making, through the same policy and the same dialog.
     func permit(_ call: AIToolServerCall, in chat: UUID) async -> Bool {
         guard isActive, let server = server(slug: call.handle) else { return false }
-        return await isPermitted(server, tool: call.tool, in: chat)
+        return await isPermitted(server, tool: call.tool, in: chat) && !Task.isCancelled
     }
 
     func invoke(_ call: AIToolCall, in chat: UUID) async -> AIToolResult {
         guard let route = MCPToolName.parse(call.name),
             let server = server(slug: route.slug),
-            let connection = manager.connection(slug: route.slug)
+            manager.connection(slug: route.slug) != nil
         else {
             return .failure(call.id, "That tool is no longer connected.")
         }
         guard await isPermitted(server, tool: route.tool, in: chat) else {
             return .failure(call.id, "The user declined this tool call.")
+        }
+        // The dialog may have outlived the turn, or Settings may have withdrawn the server.
+        guard !Task.isCancelled, self.server(slug: route.slug) != nil,
+            let connection = manager.connection(slug: route.slug)
+        else {
+            return .failure(call.id, "The tool call was cancelled.")
         }
         manager.markUsed()
         do {
@@ -205,17 +212,19 @@ final class MCPCoordinator {
     /// Escape refuses this one call: a dialog can grant a server, only Settings can withhold one.
     private func ask(_ server: MCPServer, tool: String) async -> MCPTrustChoice {
         let choices: [MCPTrustChoice] = [.always, .thisChat, .refuse]
+        let isExa = server.id == ExaSearch.id && server.transport == ExaSearch.server().transport
         let index = await core.choose(
-            title: "Let \(server.title) run its tools?",
-            message: "The model wants to call \u{201C}\(tool)\u{201D}. Tinycast did not write this "
-                + "server and cannot vouch for what it does.",
+            title: isExa ? "Allow Exa web search?" : "Let \(server.title) run its tools?",
+            message: isExa
+                ? "Search queries and requested page URLs are sent to Exa."
+                : "This chat wants to use \u{201C}\(tool)\u{201D} from \(server.title).",
             symbol: "wrench.and.screwdriver",
             options: [
                 DialogAction(title: "Always Allow"),
                 DialogAction(title: "Allow This Chat"),
                 DialogAction(title: "Don't Allow", role: .cancel)
             ],
-            defaultIndex: 1)
+            defaultIndex: 1, queued: true)
         return choices.indices.contains(index) ? choices[index] : .refuse
     }
 }

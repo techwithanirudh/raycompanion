@@ -515,17 +515,25 @@ private struct AIToolsMenu: View {
         let servers = coordinator.mcpServers
         let scope = chat.toolScope
         let takesTools = coordinator.capabilities(for: chat).tools
-        let active = servers.filter { scope.allows($0.slug) }.count
+        let local = coordinator.hasLocalTools
+        let total = servers.count + (local ? 1 : 0)
+        let active = servers.filter { scope.allows($0.slug) }.count + (local && scope.allows(AILocalTools.handle) ? 1 : 0)
         Menu {
-            if servers.isEmpty {
-                Text("No MCP servers are connected")
+            if total == 0 {
+                Text("No tools are enabled")
             } else {
                 Toggle(
                     "Use Tools",
                     isOn: Binding(
                         get: { scope.isEnabled },
                         set: { coordinator.setToolsEnabled($0, in: chat) }))
-                Section("Servers") {
+                Section("Tools") {
+                    if local {
+                        Toggle("RayCompanion", isOn: Binding(
+                            get: { scope.allows(AILocalTools.handle) },
+                            set: { _ in coordinator.toggleToolServer(AILocalTools.handle, in: chat) }))
+                            .disabled(!scope.isEnabled)
+                    }
                     ForEach(servers) { server in
                         Toggle(
                             server.name.isEmpty ? server.slug : server.name,
@@ -538,13 +546,13 @@ private struct AIToolsMenu: View {
                 }
             }
             Divider()
-            Button("MCP Settings…", action: coordinator.showMCPSettings)
+            Button("Tool Settings…", action: coordinator.showMCPSettings)
         } label: {
             Label(
                 !takesTools
                     ? "Tools · Not with this model"
-                    : servers.isEmpty || !scope.isEnabled
-                        ? "Tools · Off" : "Tools · \(active) of \(servers.count)",
+                    : total == 0 || !scope.isEnabled
+                        ? "Tools · Off" : "Tools · \(active) of \(total)",
                 systemImage: "wrench.and.screwdriver")
         }
         .disabled(!takesTools)

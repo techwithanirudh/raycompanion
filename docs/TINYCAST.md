@@ -9,13 +9,13 @@ The full AI backend is included: AIChatCoordinator, QuickAICoordinator, AIChatSu
 
 ## Integration changes
 
-- `App/QuickChatAdapter.swift` exposes AI operations to the small QuickChat host and migrates previous provider/history data without deleting the originals.
-- `AppCore.startAIOnly()` starts AI/MCP lifecycle and appearance observers. It does not run the upstream launcher startup, global hotkeys, Hyper Key, snippet listener, clipboard collection, or update checking.
-- `PaletteWindowController` accepts an external frame and dismissal callback so the panel occupies Raycast's captured frame and Escape restores Raycast. Its global Command–Escape tap is disabled for QuickChat.
+- `App/AIAdapter.swift` exposes AI operations to the small RayCompanion host.
+- `AppCore.startAIOnly()` starts AI/MCP lifecycle and appearance observers. It does not run the upstream launcher startup, global hotkeys, Hyper Key, snippet listener or clipboard collection. Sparkle handles update checking.
+- `PaletteWindowController` accepts an external frame and dismissal callback so the panel occupies Raycast's captured frame and Escape restores Raycast. Its global Command–Escape tap is disabled for RayCompanion.
 - The original settings split view is used, with sidebar/search restricted to AI, Dictation, General and About. General adds the Raycast Tab toggle and PermissionFlow accessibility button.
 - Upstream app entry/delegate are excluded. The dictation worker lives in Sources/DictationHelper and builds separately from the UI module.
 - AI command combinations load through Carbon without starting the upstream modifier tap monitor. Bare modifier shortcuts have not been enabled in this integration.
-- The system prompt describes QuickChat accurately instead of advertising the unused Tinycast launcher features. The test-only settings/menu entry points do not synthesize keyboard events.
+- The system prompt describes RayCompanion accurately instead of advertising the unused Tinycast launcher features. The test-only settings/menu entry points do not synthesize keyboard events.
 - Assets are compiled with `actool`; native glass, icons, spacing, menu geometry and menu animations remain upstream implementations.
 
 The library includes upstream supporting features because the AI coordinators and palette reference the shared AppCore. These do not start through `startAIOnly()`. A later reduction must preserve the original AI paths and avoid replacing working upstream components with local approximations.
@@ -34,9 +34,9 @@ The local HTTP test server in `scripts/test-provider.py` tests streaming without
 
 Upstream license and asset notices are retained in `docs/licenses` and the app bundle.
 
-Current checks: 305 chat/state/history, 790 provider/model/stream and 45 native Markdown checks passed; the seven ChatCore tests also passed. HTTP streaming, history preview, provider editor and the ⌘J window transfer were captured on the desktop. Physical Tab/typing/Escape must still be confirmed after installing this build.
+Current checks: 366 chat/state/history/tool, 790 provider/model/stream and 45 native Markdown checks passed; the three ChatCore tests also passed. HTTP streaming, history preview, provider editor and the ⌘J window transfer were captured on the desktop. Physical Tab/typing/Escape must still be confirmed after installing this build.
 
-RayCompanion retains the native AI and Dictation components, with app branding and About promotions replaced. Calendar permission UI/search and its usage description are removed. Accessibility/Microphone controls use centered HStacks. The host uses an AppKit entry point to avoid SwiftUI creating an empty duplicate Settings scene. The history divider extends beneath the floating footer. Dictation key combinations use Carbon; modifier-only hooks remain disabled. The original bundle identifier stays stable to preserve settings, history, Keychain and Accessibility approval.
+RayCompanion retains the native AI and Dictation components, with app branding and About promotions replaced. Calendar permission UI/search and its usage description are removed. Accessibility/Microphone controls use centered HStacks. The host uses an AppKit entry point to avoid SwiftUI creating an empty duplicate Settings scene. The history divider extends beneath the floating footer. Dictation key combinations use Carbon; modifier-only hooks remain disabled. The app and dictation helper use RayCompanion bundle identifiers. Legacy QuickChat migration is removed.
 
 See [cleanup review](CLEANUP.md) for removed source and the shared feature dependencies still retained. Sparkle is included as an external package; update controls live in About. See [release setup](RELEASING.md). The user confirmed exact Tab delivery, normal typing and Escape in the installed full-source build.
 
@@ -47,3 +47,9 @@ RayCompanion restricts palette modes to AI and chat history. The upstream Tab cy
 The host installs a standard Edit menu with actions routed through the native first responder. Select All was verified in both composers with a native action and desktop screenshots. Settings opening clears any pending inline return and hides the palette without activating Raycast. About and app menus include Replay setup and update controls; checking for updates stays disabled until a signed feed is configured.
 
 Onboarding keeps setup unfinished while PermissionFlow or the native provider panel is open. Continue starts PermissionFlow directly; provider Done returns to setup, and Start chatting completes it. Reopening the app preserves the unfinished step. The optional Exa key uses native MCP Keychain storage and the hosted search/fetch tools; authenticated search still needs a user key for end-to-end verification. The context card shows a short summary by default, with technical details available from the context indicator.
+
+Quick Chat can start a temporary conversation without writing it to history. Continuing in the full chat window saves it. Transcript image thumbnails open a native AppKit image popup within the transcript, without backdrop dimming.
+
+Reopening Settings clears any pending inline return before dismissing the palette and raising the existing Settings window. Deferred native window activation does not take focus from a different key window.
+
+Native calculator, scoped file search/read and selected-text tools use the existing AI loop and an app-owned local MCP bridge for CLI routes. Installed Raycast AI tool bundles can be imported without launcher startup. A tool-only JavaScriptCore adapter handles invocation, confirmations and bounded results, with separate Keychain preferences/storage. See [AI tools](AI-TOOLS.md) for compatibility limits and verification.

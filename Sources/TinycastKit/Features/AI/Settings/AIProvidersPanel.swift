@@ -63,14 +63,10 @@ struct AIProvidersPanel: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            SettingsEditorHeader(
-                title: "AI Providers",
-                subtitle: "Installed tools, API connections, and the models each one offers."
-            )
+            SettingsEditorHeader(title: "AI Providers")
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Theme.Spacing.dialogInset)
-            .padding(.top, Theme.Spacing.dialogInset)
-            .padding(.bottom, Theme.Spacing.xl)
+            .padding(.vertical, Theme.Spacing.xl)
             Divider()
             HStack(spacing: 0) {
                 list
@@ -292,15 +288,11 @@ struct AIProvidersPanel: View {
                 Text(AppleIntelligence.title)
                 Text(
                     available
-                        ? "Runs on this Mac. Nothing leaves it."
+                        ? "Runs on this Mac."
                         : AppleIntelligenceProvider.status().message ?? "Not available on this Mac.")
             }
         } header: {
             Text("Status")
-        } footer: {
-            Text("Choose the default model on the AI pane.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 
@@ -520,7 +512,7 @@ struct AIProvidersPanel: View {
 
     private func installedFooter(_ kind: InstalledAIKind) -> String {
         kind.isolationCaveat(hasManagedMCPPolicy: InstalledAIManager.hasManagedMCPPolicy)
-            ?? "Uses the \(kind.command) command signed in on this Mac. Its keys are never stored."
+            ?? "Uses your signed-in \(kind.command) account."
     }
 
     private func installedModels(_ kind: InstalledAIKind) -> [ProviderModel] {
@@ -571,10 +563,6 @@ struct AIProvidersPanel: View {
             }
         } header: {
             Text("Connection")
-        } footer: {
-            Text("Keys stay in your login Keychain, tied to the endpoint they were saved for.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 
@@ -625,8 +613,7 @@ struct AIProvidersPanel: View {
                 }
             } footer: {
                 Text(
-                    "Ticked models appear in the model picker. The default model always does; "
-                        + "choose it on the AI pane."
+                    "Selected models appear in the model picker."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)

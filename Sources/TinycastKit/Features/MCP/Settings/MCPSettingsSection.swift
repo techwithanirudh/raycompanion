@@ -46,7 +46,7 @@ struct MCPSettingsSection: View {
         } header: {
             SettingsSectionHeader(.aiMCPServers)
         } footer: {
-            Text("Type @slug to address one server. A chat asks before its first tool call.")
+            Text("Type @ to choose a server in chat.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -59,7 +59,7 @@ struct MCPSettingsSection: View {
         ) { server in
             Button("Remove", role: .destructive) { remove(server) }
         } message: { _ in
-            Text("Its tools stop being offered, and its stored credentials are deleted.")
+            Text("This also deletes its saved credentials.")
         }
     }
 

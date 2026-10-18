@@ -74,6 +74,8 @@ final class AppWindowController: NSObject, NSWindowDelegate {
         return true
     }
 
+    var isOpen: Bool { window != nil }
+
     func close() {
         window?.close()
     }
@@ -145,7 +147,8 @@ final class AppWindowController: NSObject, NSWindowDelegate {
         window.makeKeyAndOrderFront(nil)
         // `NSApp.activate` is async, so re-assert next turn — never onto a window closed since.
         DispatchQueue.main.async { [weak self, weak window] in
-            guard let window, self?.window === window else { return }
+            guard let window, self?.window === window, window.isVisible,
+                  NSApp.keyWindow == nil || NSApp.keyWindow === window else { return }
             window.makeKeyAndOrderFront(nil)
         }
     }

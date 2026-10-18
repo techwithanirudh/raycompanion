@@ -54,6 +54,7 @@ final class AIChatSurfacesState {
         let next: AIChatState
         if quickAI.holds(id) {
             next = quickAI
+            next.keepConversation()
             quickAI = makeState()
         } else if let answering = answeringElsewhere.removeValue(forKey: id), answering.isStreaming {
             next = answering
@@ -83,6 +84,7 @@ final class AIChatSurfacesState {
             return false
         }
         let moved = quickAI
+        moved.keepConversation()
         quickAI = makeState()
         show(moved)
         if !draft.isEmpty { window.draft = draft }

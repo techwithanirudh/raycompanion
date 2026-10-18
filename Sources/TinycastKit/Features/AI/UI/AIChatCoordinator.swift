@@ -7,7 +7,6 @@ import SwiftUI
 final class AIChatCoordinator {
     let chats: AIChatSurfacesState
     private let settings: AppSettings
-    private let appIndex: AppIndex
     private let paletteCoordinator: PaletteCoordinator
     private let settingsCoordinator: SettingsCoordinator
     private unowned let core: AppCore
@@ -16,13 +15,12 @@ final class AIChatCoordinator {
     @ObservationIgnored private var naming: [UUID: Task<Void, Never>] = [:]
 
     init(
-        chats: AIChatSurfacesState, settings: AppSettings, appIndex: AppIndex,
+        chats: AIChatSurfacesState, settings: AppSettings,
         paletteCoordinator: PaletteCoordinator, settingsCoordinator: SettingsCoordinator,
         core: AppCore
     ) {
         self.chats = chats
         self.settings = settings
-        self.appIndex = appIndex
         self.paletteCoordinator = paletteCoordinator
         self.settingsCoordinator = settingsCoordinator
         self.core = core
@@ -34,8 +32,8 @@ final class AIChatCoordinator {
     }
 
     func applyEnabled() {
-        appIndex.setCommandsVisible([.aiChat, .quickAI], settings.aiEnabled)
         guard settings.aiEnabled else {
+            core.localTools.stop()
             for request in naming.values { request.cancel() }
             naming = [:]
             // Before the handle closes: cancelling an open reply saves the conversation it ends.
@@ -317,10 +315,22 @@ final class AIChatCoordinator {
         let excluded = chat.toolScope.excluded
         let chatID = chat.session.id
         let mcp = core.mcpCoordinator
+        let local = core.localTools
         return AIToolServerSession(rounds: core.aiSettings.toolRounds.limit) {
-            await mcp.toolServers(scopedTo: slug).filter { !excluded.contains($0.handle) }
-        } consent: { call in
-            await mcp.permit(call, in: chatID)
+            var servers = await mcp.toolServers(scopedTo: slug).filter { !excluded.contains($0.handle) }
+            if !excluded.contains(AILocalTools.handle), let server = await local.server(scopedTo: slug) { servers.append(server) }
+            return servers
+        } consent: { [weak chat] call in
+            if call.handle == AILocalTools.handle {
+                return await MainActor.run {
+                    guard let chat else { return false }
+                    return AIToolRoute.permitsLocal(
+                        call, offered: local.tools(scopedTo: slug), localEnabled: local.enabled,
+                        scope: chat.toolScope)
+                }
+            }
+            guard await chat?.toolScope.allows(call.handle) == true else { return false }
+            return await mcp.permit(call, in: chatID)
         }
     }
 
@@ -328,28 +338,47 @@ final class AIChatCoordinator {
     private func toolAware(
         _ provider: any AIProvider, scopedTo slug: String?, in chat: AIChatState
     ) -> any AIProvider {
-        let tools = tools(for: chat, scopedTo: slug)
+        let offered = tools(for: chat, scopedTo: slug)
+        let tools = offered.mcp + offered.local
         guard capabilities(for: chat).tools, !tools.isEmpty else { return provider }
         let chatID = chat.session.id
+        let local = Set(offered.local.map(\.name))
+        let mcp = Set(offered.mcp.map(\.name))
         return AIToolLoopProvider(
             base: provider, tools: tools, maxRounds: core.aiSettings.toolRounds.limit
-        ) { [mcp = core.mcpCoordinator] call in
-            await mcp.invoke(call, in: chatID)
+        ) { [weak chat, mcpCoordinator = core.mcpCoordinator, localTools = core.localTools] call in
+            // Routed by what this turn offered, and rechecked in case the chat's menu changed since.
+            let route = await MainActor.run {
+                AIToolRoute.resolve(
+                    call.name, local: local, mcp: mcp, localEnabled: localTools.enabled,
+                    scope: chat?.toolScope ?? ChatToolScope(isEnabled: false))
+            }
+            switch route {
+            case .local: return await localTools.invoke(call)
+            case .mcp: return await mcpCoordinator.invoke(call, in: chatID)
+            case .unavailable: return .failure(call.id, "That tool is not available in this chat.")
+            }
         }
     }
 
     /// `@server` narrows a turn further, but never past what the chat's tools menu switched off.
-    private func tools(for chat: AIChatState, scopedTo slug: String?) -> [AITool] {
-        guard chat.toolScope.isEnabled else { return [] }
-        let excluded = chat.toolScope.excluded
-        return core.mcpCoordinator.tools(scopedTo: slug).filter { tool in
-            guard let route = MCPToolName.parse(tool.name) else { return true }
-            return !excluded.contains(route.slug)
+    private func tools(
+        for chat: AIChatState, scopedTo slug: String?
+    ) -> (mcp: [AITool], local: [AITool]) {
+        guard chat.toolScope.isEnabled else { return ([], []) }
+        let scope = chat.toolScope
+        let allowed = { (tool: AITool) in
+            MCPToolName.parse(tool.name).map { scope.allows($0.slug) } ?? true
         }
+        return (
+            core.mcpCoordinator.tools(scopedTo: slug).filter(allowed),
+            core.localTools.tools(scopedTo: slug).filter(allowed)
+        )
     }
 
     /// The servers a chat's tools menu offers; empty when MCP is off or nothing is set up.
     var mcpServers: [MCPServer] { core.mcpCoordinator.servers }
+    var hasLocalTools: Bool { core.localTools.enabled }
 
     func setToolsEnabled(_ enabled: Bool, in chat: AIChatState) {
         chat.toolScope.isEnabled = enabled
@@ -421,7 +450,7 @@ final class AIChatCoordinator {
             systemPrompt: core.aiSettings.systemPromptEnabled,
             webSearch: core.aiSettings.webSearchEnabled && can.webSearch,
             toolServers: can.tools && scope.isEnabled
-                ? mcpServers.count { scope.allows($0.slug) } : 0)
+                ? mcpServers.count { scope.allows($0.slug) } + (hasLocalTools && scope.allows(AILocalTools.handle) ? 1 : 0) : 0)
     }
 
     // MARK: - Attachments

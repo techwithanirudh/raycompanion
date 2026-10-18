@@ -41,7 +41,7 @@ enum PaletteMode: String, CaseIterable, Identifiable {
         case .schedule: return "calendar"
         case .meetingDetails: return "calendar"
         case .uninstall: return "trash"
-        case .quicklinks: return Quicklink.sfSymbol
+        case .quicklinks: return "link"
         case .snippets: return "curlybraces"
         case .dictionary: return "book.closed"
         case .extensionCommand: return "puzzlepiece.extension"

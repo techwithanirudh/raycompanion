@@ -1,0 +1,1 @@
+identifier "com.anirudh.raycompanion" and certificate root = H"13f1de9d0e9d39afb5988272ebaebd98b56e08ac"

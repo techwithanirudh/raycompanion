@@ -15,7 +15,7 @@ struct DictationSettingsView: View {
                 Toggle(isOn: enabledBinding) {
                     SettingsFeatureToggleLabel(
                         anchor: .dictationDictation, title: "Enable Dictation",
-                        subtitle: "Transcribe speech on your Mac with a local model.")
+                        subtitle: "Transcribe on this Mac.")
                 }
                 if microphoneAccess != .authorized {
                     HStack(alignment: .center, spacing: Theme.Spacing.lg) {
@@ -25,9 +25,6 @@ struct DictationSettingsView: View {
                         VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
                             Text("Microphone access required")
                                 .foregroundStyle(.orange)
-                            Text("Needed to record your dictation.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
                         }
                         Spacer(minLength: Theme.Spacing.lg)
                         Button(
@@ -161,7 +158,7 @@ struct DictationSettingsView: View {
                 } header: {
                     SettingsSectionHeader(.dictationMemory)
                 } footer: {
-                    Text("Releasing it when idle frees memory. The next dictation takes a moment longer.")
+                    Text("Frees memory while idle. The next dictation starts more slowly.")
                 }
 
                 Section {
@@ -190,7 +187,7 @@ struct DictationSettingsView: View {
                     SettingsSectionHeader(.dictationOutput)
                 } footer: {
                     Text(
-                        "Press Return to finish dictating or Escape to cancel. Protected fields may refuse insertion."
+                        "Return finishes dictation. Escape cancels."
                     )
                 }
 

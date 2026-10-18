@@ -95,8 +95,6 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
             panel.contentView?.layoutSubtreeIfNeeded()
             core.inputSourceSwitcher.beginSession(
                 preferredInputSourceID: core.settings.autoSwitchInputSourceID)
-            // Events go stale while the palette is closed, and the countdown only ticks while up.
-            if core.palette.permittedModes == nil { core.calendarCoordinator.paletteDidShow() }
             core.palette.noteVisible(true)
             if core.palette.permittedModes == nil { core.clipboardStore.setTextSearchActive(true) }
             // Only while we are on screen: a system-wide tap has no business outliving the window.
@@ -130,19 +128,6 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
             ?? event.charactersIgnoringModifiers?.lowercased()
     }
 
-    /// Shift is allowed, since ⌘+ is a shifted = on most layouts; the base key decides.
-    private static func emojiGridZoom(from event: NSEvent) -> EmojiGridZoom? {
-        guard !event.isARepeat, event.modifierFlags.isDisjoint(with: [.option, .control]) else {
-            return nil
-        }
-        switch ASCIIKeyboardLayout.character(for: event) {
-        case "0": return .actualSize
-        case "=", "+": return .zoomIn
-        case "-": return .zoomOut
-        default: return nil
-        }
-    }
-
     /// A local monitor sees the key before menu dispatch; returning nil swallows it.
     private func installPasteMonitor() {
         pasteMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
@@ -169,10 +154,6 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
         panel?.orderOut(nil)
         commandEscapeTap.disable()
         core.inputSourceSwitcher.endSession()
-        if core.palette.permittedModes == nil {
-            core.calendarCoordinator.paletteDidHide()
-            core.roomCoordinator.paletteDidHide()
-        }
         core.palette.noteVisible(false)
         core.clipboardStore.setTextSearchActive(false)
         // Drop the anchor, so the next summon re-resolves for the screen in use then.
@@ -429,10 +410,6 @@ final class PaletteWindowController: NSObject, NSWindowDelegate {
         // Handled at the panel: the field editor or a missing main menu eats these first.
         panel.onCommandShortcut = { [weak self] event in
             guard let self else { return false }
-            if self.core.palette.mode == .emoji, let zoom = Self.emojiGridZoom(from: event) {
-                self.core.palette.noteEmojiGridZoom(zoom)
-                return true
-            }
             guard Self.commandCharacter(from: event) != nil else { return false }
             if self.core.palette.mode == .launcher || self.core.palette.mode == .clipboard,
                 let index = FavoriteSlots.index(forKeyCode: event.keyCode)

@@ -28,6 +28,7 @@ struct ChatTranscriptView: View {
     var find: ChatFindHighlight?
     /// Cleared when the reader scrolls up, so a streaming reply stops dragging them back down.
     @State private var followsTail = true
+    @State private var previewImage: NSImage?
 
     /// Below this a backward move is momentum settling, not the reader asking for the wheel.
     private static let deliberateScroll: CGFloat = 2
@@ -51,7 +52,8 @@ struct ChatTranscriptView: View {
                             onRegenerate: isLast && message.role == .assistant
                                 ? onRegenerate : nil,
                             // Only the latest reply's choices still answer anything.
-                            onChoose: isLast && message.state == .complete ? onChoose : nil
+                            onChoose: isLast && message.state == .complete ? onChoose : nil,
+                            onImagePreview: { previewImage = $0 }
                         )
                         .equatable()
                         .environment(\.chatTextHighlight, highlight(for: message.id))
@@ -120,6 +122,20 @@ struct ChatTranscriptView: View {
                 .animation(.easeOut(duration: Theme.Duration.chatFooter), value: followsTail)
             }
         }
+        .overlay {
+            if let previewImage {
+                GeometryReader { geometry in
+                    ZStack {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture { self.previewImage = nil }
+                        ChatImagePreview(image: previewImage, onClose: { self.previewImage = nil })
+                            .frame(width: min(460, max(100, geometry.size.width - 32)),
+                                   height: min(360, max(100, geometry.size.height - 32)))
+                    }
+                }
+            }
+        }
     }
 
     private func highlight(for id: UUID) -> ChatTextHighlight? {
@@ -174,6 +190,7 @@ private struct ChatMessageView: View, @MainActor Equatable {
     let status: String?
     let onRegenerate: (() -> Void)?
     let onChoose: ((String) -> Void)?
+    let onImagePreview: (NSImage) -> Void
     @Environment(\.chatTextHighlight) private var highlight
 
     @State private var hovered = false
@@ -229,6 +246,10 @@ private struct ChatMessageView: View, @MainActor Equatable {
             .foregroundStyle(Theme.Colors.textTertiary)
     }
 
+    private var isImageOnly: Bool {
+        message.text.isEmpty && !message.images.isEmpty && message.documents.isEmpty
+    }
+
     @ViewBuilder private var content: some View {
         if message.text.isEmpty, message.searches.isEmpty, message.toolUses.isEmpty,
             message.reasoning.isEmpty, message.state == .streaming
@@ -244,7 +265,7 @@ private struct ChatMessageView: View, @MainActor Equatable {
                 .foregroundStyle(message.state == .failed ? Theme.Colors.destructive : .primary)
                 .textSelection(.enabled)
                 // The user bubble is inset because it carries a fill; a reply clears the chevron
-                .padding(.horizontal, message.role == .user ? metrics.spacing.xl : metrics.spacing.sm)
+                .padding(.horizontal, message.role == .user ? (isImageOnly ? metrics.spacing.md : metrics.spacing.xl) : metrics.spacing.sm)
                 .padding(.vertical, metrics.spacing.md)
                 .background(
                     RoundedRectangle(cornerRadius: metrics.radius.row, style: .continuous)
@@ -259,7 +280,7 @@ private struct ChatMessageView: View, @MainActor Equatable {
                 // Wider than the stack's own rhythm: two 96pt tiles at `sm` read as one blob.
                 HStack(spacing: metrics.spacing.xl) {
                     ForEach(message.images, id: \.self) { image in
-                        ChatImageThumbnail(image: image, edge: metrics.size.chatImageThumb)
+                        ChatImageThumbnail(image: image, edge: metrics.size.chatImageThumb, onOpen: onImagePreview)
                     }
                 }
             }
@@ -493,14 +514,20 @@ struct ChatImageThumbnail: View {
     @Environment(\.metrics) private var metrics
     let image: AIImage
     let edge: CGFloat
+    let onOpen: (NSImage) -> Void
     @State private var decoded: NSImage?
 
     var body: some View {
         Group {
             if let decoded {
-                Image(nsImage: decoded)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
+                Button { onOpen(decoded) } label: {
+                    Image(nsImage: decoded)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                }
+                .buttonStyle(.plain)
+                .help("Enlarge image")
+                .accessibilityLabel("Enlarge attached image")
             } else {
                 Color.clear
             }

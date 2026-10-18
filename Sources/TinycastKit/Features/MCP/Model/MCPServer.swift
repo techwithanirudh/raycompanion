@@ -101,8 +101,11 @@ struct MCPServer: Codable, Equatable, Identifiable, Sendable {
 /// The handle `@slug` addresses, derived from the name so nobody has to invent a second one.
 enum MCPSlug {
     static let maxLength = 24
+    /// The app's own tools answer to this handle, so no user server may take it.
+    static let reserved: Set<String> = [AILocalTools.handle]
 
     static func make(from name: String, existing: Set<String>) -> String {
+        let existing = existing.union(reserved)
         let base = normalize(name)
         guard existing.contains(base) else { return base }
         // A suffix rather than a refusal: two servers may honestly want the same name.

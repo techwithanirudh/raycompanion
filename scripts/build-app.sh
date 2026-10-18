@@ -38,7 +38,7 @@ cp Resources/RayCompanion.icns "$helper_dir/Contents/Resources/RayCompanion.icns
 cp "$binary_dir/DictationHelper" "$helper_dir/Contents/MacOS/$helper_name"
 cp Resources/DictationInfo.plist "$helper_dir/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string RayCompanion" "$helper_dir/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.anirudh.quickchat.dictation" "$helper_dir/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.anirudh.raycompanion.dictation" "$helper_dir/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleName $helper_name" "$helper_dir/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName $helper_name" "$helper_dir/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleDevelopmentRegion en" "$helper_dir/Contents/Info.plist"

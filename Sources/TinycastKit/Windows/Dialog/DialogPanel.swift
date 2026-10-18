@@ -3,17 +3,13 @@ import Carbon.HIToolbox
 
 /// One dialog's panel; keys go through `sendEvent`, so Esc/↵ need no focused subview.
 final class DialogPanel: NSPanel {
-    /// What the panel saw, not what it means: how far a step moves is the caller's business.
+    /// What the panel saw, not what it means.
     enum Key {
         case cancel
         case confirm
-        case increment
-        case decrement
     }
 
     var onKey: ((Key) -> Void)?
-    /// Arrows are a control's keys, not the panel's; a text field needs them for its caret.
-    var handlesArrowKeys = false
 
     init(content: NSView, cornerRadius: CGFloat) {
         super.init(
@@ -47,16 +43,11 @@ final class DialogPanel: NSPanel {
             return
         }
         switch Int(event.keyCode) {
+        // A held key repeats; one press answers one dialog, never the consent queued behind it.
         case kVK_Escape:
-            onKey(.cancel)
+            if !event.isARepeat { onKey(.cancel) }
         case kVK_Return, kVK_ANSI_KeypadEnter:
-            onKey(.confirm)
-        case kVK_LeftArrow where handlesArrowKeys,
-            kVK_DownArrow where handlesArrowKeys:
-            onKey(.decrement)
-        case kVK_RightArrow where handlesArrowKeys,
-            kVK_UpArrow where handlesArrowKeys:
-            onKey(.increment)
+            if !event.isARepeat { onKey(.confirm) }
         default:
             super.sendEvent(event)
         }

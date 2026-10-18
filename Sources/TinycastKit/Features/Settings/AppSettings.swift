@@ -189,16 +189,6 @@ final class AppSettings {
         }
     }
 
-    /// Preferred skin tone applied to modifier-capable emoji at render and copy time.
-    var emojiSkinTone: EmojiSkinTone {
-        didSet { defaults.set(emojiSkinTone.rawValue, forKey: Key.emojiSkinTone.rawValue) }
-    }
-
-    /// Grid density used when the emoji picker opens; in-session zoom remains temporary.
-    var emojiGridColumns: EmojiGridColumns {
-        didSet { defaults.set(emojiGridColumns.rawValue, forKey: Key.emojiGridColumns.rawValue) }
-    }
-
     /// How long a closed palette keeps its state before popping back to the root launcher.
     var popToRootTimeout: PopToRootTimeout {
         didSet { defaults.set(popToRootTimeout.rawValue, forKey: Key.popToRootTimeout.rawValue) }
@@ -464,11 +454,6 @@ final class AppSettings {
         }
     }
 
-    /// Narrows the fetch itself rather than what is shown, so every surface reads the same days.
-    var calendarSpan: MeetingSpan {
-        didSet { defaults.set(calendarSpan.rawValue, forKey: Key.calendarSpan.rawValue) }
-    }
-
     var joinWindowMinutes: JoinWindow {
         didSet { defaults.set(joinWindowMinutes.rawValue, forKey: Key.joinWindowMinutes.rawValue) }
     }
@@ -568,11 +553,6 @@ final class AppSettings {
         }
     }
 
-    /// What re-triggering a half does: nothing, step its size, or walk it across the displays.
-    var windowCycle: WindowCycle {
-        didSet { defaults.set(windowCycle.rawValue, forKey: Key.windowCycle.rawValue) }
-    }
-
     /// Off means fully off, down to a still-registered shortcut opening nothing.
     var quicklinksEnabled: Bool {
         didSet { defaults.set(quicklinksEnabled, forKey: Key.quicklinksEnabled.rawValue) }
@@ -593,15 +573,6 @@ final class AppSettings {
     var quicklinkOpensNewWindow: Bool {
         didSet {
             defaults.set(quicklinkOpensNewWindow, forKey: Key.quicklinkOpensNewWindow.rawValue)
-        }
-    }
-
-    /// What `{selection}` does when there is no readable selection to pass.
-    var quicklinkSelectionFallback: QuicklinkSelectionFallback {
-        didSet {
-            defaults.set(
-                quicklinkSelectionFallback.rawValue,
-                forKey: Key.quicklinkSelectionFallback.rawValue)
         }
     }
 
@@ -657,11 +628,6 @@ final class AppSettings {
             defaults.string(forKey: Key.hyperKeyQuickPress.rawValue)
             .flatMap(HyperKeyQuickPress.init)
             ?? .none
-        emojiSkinTone =
-            defaults.string(forKey: Key.emojiSkinTone.rawValue).flatMap(EmojiSkinTone.init) ?? .none
-        emojiGridColumns =
-            EmojiGridColumns(rawValue: defaults.integer(forKey: Key.emojiGridColumns.rawValue))
-            ?? .default
         popToRootTimeout =
             PopToRootTimeout(rawValue: defaults.integer(forKey: Key.popToRootTimeout.rawValue))
             ?? .immediately
@@ -768,10 +734,6 @@ final class AppSettings {
             defaults.object(forKey: Key.calendarLauncherLimit.rawValue)
             .flatMap { $0 as? Int }
             .flatMap(CalendarLauncherLimit.init(rawValue:)) ?? .five
-        // No case is zero, so an unset key falls through to the default.
-        calendarSpan =
-            MeetingSpan(rawValue: defaults.integer(forKey: Key.calendarSpan.rawValue))
-            ?? .todayAndTomorrow
         joinWindowMinutes =
             JoinWindow(rawValue: defaults.integer(forKey: Key.joinWindowMinutes.rawValue)) ?? .five
         autoJoinMeetings = defaults.bool(forKey: Key.autoJoinMeetings.rawValue)
@@ -807,8 +769,6 @@ final class AppSettings {
             || defaults.bool(forKey: Key.windowManagementShowInLauncher.rawValue)
         // Unset reads as 0, which is the intended default anyway — no gap.
         windowGap = defaults.integer(forKey: Key.windowGap.rawValue)
-        windowCycle =
-            defaults.string(forKey: Key.windowCycle.rawValue).flatMap(WindowCycle.init) ?? .off
         windowLayoutsShowInLauncher =
             defaults.object(forKey: Key.windowLayoutsShowInLauncher.rawValue) == nil
             || defaults.bool(forKey: Key.windowLayoutsShowInLauncher.rawValue)
@@ -821,9 +781,6 @@ final class AppSettings {
             || defaults.bool(forKey: Key.quicklinksShowInLauncher.rawValue)
         appleShortcutsEnabled = defaults.bool(forKey: Key.appleShortcutsEnabled.rawValue)
         quicklinkOpensNewWindow = defaults.bool(forKey: Key.quicklinkOpensNewWindow.rawValue)
-        quicklinkSelectionFallback =
-            defaults.string(forKey: Key.quicklinkSelectionFallback.rawValue)
-            .flatMap(QuicklinkSelectionFallback.init) ?? .ask
         quicklinkConfirmsBeforeDelete =
             defaults.object(forKey: Key.quicklinkConfirmsBeforeDelete.rawValue) == nil
             || defaults.bool(forKey: Key.quicklinkConfirmsBeforeDelete.rawValue)

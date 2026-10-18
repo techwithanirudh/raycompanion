@@ -31,10 +31,6 @@ final class PaletteState {
     var clipboardFilter: ClipboardFilter = .all
     /// The file search screen's type filter, reset on each summon like the clipboard's.
     var fileSearchFilter: FileSearchFilter = .all
-    /// The emoji picker's visible category, reset with the rest of a freshly opened screen.
-    var emojiCategoryFilter: EmojiCategoryFilter = .all
-    /// Nil means the configured default; zoom only overrides it for this picker session.
-    var emojiGridColumnsOverride: EmojiGridColumns?
     /// Whether file search draws its Quick Look overlay; it follows whatever row is selected.
     var fileSearchQuickLook = false
     /// Ordering out leaves the SwiftUI tree mounted, so a media preview needs this to stop playing.
@@ -54,10 +50,6 @@ final class PaletteState {
     private(set) var favoriteSlotToken = UUID()
     /// The last slot index from `noteFavoriteSlot`, consumed by the SwiftUI layer.
     private(set) var favoriteSlotIndex: Int?
-    /// Bumped for ⌘0 / ⌘+ / ⌘-, which the panel claims before the field editor can.
-    private(set) var emojiGridZoomToken = UUID()
-    /// The last zoom from `noteEmojiGridZoom`, consumed by the SwiftUI layer.
-    private(set) var emojiGridZoom: EmojiGridZoom?
     /// Set by the compact bar's overflow to expand without a query; cleared by `prepare`.
     var forceExpanded = false
     /// The paste target, mirrored on every show; `prepare` resets the screen, not this.
@@ -161,8 +153,6 @@ final class PaletteState {
         argumentEntryID = nil
         clipboardFilter = .all
         fileSearchFilter = .all
-        emojiCategoryFilter = .all
-        emojiGridColumnsOverride = nil
         fileSearchQuickLook = false
         forceExpanded = false
         dropHoverHighlight()
@@ -195,11 +185,6 @@ final class PaletteState {
     func noteFavoriteSlot(_ index: Int) {
         favoriteSlotIndex = index
         favoriteSlotToken = UUID()
-    }
-
-    func noteEmojiGridZoom(_ zoom: EmojiGridZoom) {
-        emojiGridZoom = zoom
-        emojiGridZoomToken = UUID()
     }
 
     func noteCommandHeld(_ held: Bool) {

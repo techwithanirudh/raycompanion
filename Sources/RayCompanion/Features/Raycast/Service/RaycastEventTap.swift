@@ -17,7 +17,7 @@ final class RaycastEventTap: @unchecked Sendable {
     func start() {
         Thread { [self] in
             let mask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue)
-            guard let tap = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap,
+            guard let tap = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .tailAppendEventTap, options: .defaultTap,
                 eventsOfInterest: CGEventMask(mask), callback: { _, type, event, context in
                     guard let context else { return Unmanaged.passUnretained(event) }
                     let engine = Unmanaged<RaycastEventTap>.fromOpaque(context).takeUnretainedValue()
@@ -25,16 +25,20 @@ final class RaycastEventTap: @unchecked Sendable {
                 }, userInfo: Unmanaged.passUnretained(self).toOpaque()) else { report(.failed); return }
             let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
             let loop = CFRunLoopGetCurrent()
+            CFRunLoopAddSource(loop, source, .commonModes)
             lock.lock()
             runLoop = loop
             let shouldRun = !stopped
             lock.unlock()
             if shouldRun {
-                CFRunLoopAddSource(loop, source, .commonModes)
                 report(.ready)
-                CFRunLoopRun()
-                CFRunLoopRemoveSource(loop, source, .commonModes)
+                // CFRunLoopStop only ends a loop that is already running, so a stop that lands
+                // before the loop starts would otherwise leave this tap running forever.
+                while !isStopped {
+                    if CFRunLoopRunInMode(.defaultMode, 0.5, false) == .finished { break }
+                }
             }
+            CFRunLoopRemoveSource(loop, source, .commonModes)
             CGEvent.tapEnable(tap: tap, enable: false)
             CFMachPortInvalidate(tap)
         }.start()
@@ -46,7 +50,13 @@ final class RaycastEventTap: @unchecked Sendable {
         lock.unlock()
         if let loop { CFRunLoopStop(loop) }
     }
+    private var isStopped: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return stopped
+    }
     private func handle(_ type: CGEventType, _ event: CGEvent) -> Bool {
+        guard !isStopped else { return false }
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             report(.failed)
             stop()
@@ -63,12 +73,17 @@ final class RaycastEventTap: @unchecked Sendable {
         return true
     }
     func inspect() -> (String, CGRect?)? { captureRoot().map { ($0.0, $0.1) } }
-    private func captureRoot() -> (String, CGRect?, RaycastSearchField)? {
+    static func isFocused(pid: pid_t) -> Bool {
         let system = AXUIElementCreateSystemWide()
         AXUIElementSetMessagingTimeout(system, 0.025)
-        guard let active = elementAttribute(system, kAXFocusedApplicationAttribute) else { return nil }
-        var activePID: pid_t = 0
-        guard AXUIElementGetPid(active, &activePID) == .success, activePID == pid else { return nil }
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(system, kAXFocusedApplicationAttribute as CFString, &value) == .success,
+              let value, CFGetTypeID(value) == AXUIElementGetTypeID() else { return false }
+        var focusedPID: pid_t = 0
+        return AXUIElementGetPid(value as! AXUIElement, &focusedPID) == .success && focusedPID == pid
+    }
+    private func captureRoot() -> (String, CGRect?, RaycastSearchField)? {
+        guard Self.isFocused(pid: pid) else { return nil }
         let app = AXUIElementCreateApplication(pid)
         AXUIElementSetMessagingTimeout(app, 0.025)
         guard let focused = elementAttribute(app, kAXFocusedUIElementAttribute),

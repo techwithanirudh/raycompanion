@@ -7,7 +7,16 @@ final class DialogController: NSObject, NSWindowDelegate {
     private let settings: AppSettings
     private let onPresentationChanged: (Bool) -> Void
     private var panel: DialogPanel?
-    private var continuation: CheckedContinuation<Int, Never>?
+    private var active: Pending?
+    /// Tool consent waiting its turn; anything else is refused while a dialog is up.
+    private var waiting: [Pending] = []
+    private var isAdvancing = false
+
+    private struct Pending {
+        let id: UUID
+        let request: DialogRequest
+        let continuation: CheckedContinuation<Int, Never>
+    }
 
     init(settings: AppSettings, onPresentationChanged: @escaping (Bool) -> Void) {
         self.settings = settings
@@ -16,7 +25,7 @@ final class DialogController: NSObject, NSWindowDelegate {
 
     func confirm(
         title: String, message: String?, symbol: String?, tone: DialogTone, confirmTitle: String,
-        confirmRole: DialogAction.Role, dismissTitle: String = "Cancel"
+        confirmRole: DialogAction.Role, dismissTitle: String = "Cancel", queued: Bool = false
     ) async -> Bool {
         let request = DialogRequest(
             title: title, message: message, symbol: symbol, tone: tone,
@@ -25,18 +34,18 @@ final class DialogController: NSObject, NSWindowDelegate {
                 DialogAction(title: dismissTitle, role: .cancel)
             ],
             defaultIndex: 0, cancelIndex: 1)
-        return await present(request) == 0
+        return await present(request, queued: queued) == 0
     }
 
     /// More than two ways forward; `options` is in dispatch order and the last one is the cancel.
     func choose(
         title: String, message: String?, symbol: String?, tone: DialogTone,
-        options: [DialogAction], defaultIndex: Int
+        options: [DialogAction], defaultIndex: Int, queued: Bool = false
     ) async -> Int {
         let request = DialogRequest(
             title: title, message: message, symbol: symbol, tone: tone, actions: options,
             defaultIndex: defaultIndex, cancelIndex: options.count - 1)
-        return await present(request)
+        return await present(request, queued: queued)
     }
 
     func notice(title: String, message: String, symbol: String, tone: DialogTone) async {
@@ -46,105 +55,62 @@ final class DialogController: NSObject, NSWindowDelegate {
         _ = await present(request)
     }
 
-    /// Something already went wrong, unlike `confirm`; true if recovery was taken.
-    func reportFailure(
-        title: String, message: String, symbol: String, recovery: String?
-    ) async
-        -> Bool
-    {
-        var actions = [DialogAction(title: "OK", role: .cancel)]
-        if let recovery { actions.append(DialogAction(title: recovery)) }
-        // ↵ lands on the recovery action when there is one to take, not on the OK dismissal.
-        let recoveryIndex = recovery == nil ? nil : actions.count - 1
-        let request = DialogRequest(
-            title: title, message: message, symbol: symbol, tone: .danger,
-            actions: actions, defaultIndex: recoveryIndex ?? 0, cancelIndex: 0)
-        return await present(request) == recoveryIndex
-    }
-
-    func pickVolume(current: Float32) async -> Float32? {
-        let volume = VolumeState(level: Double(current))
-        let request = DialogRequest(
-            title: "Set Volume", message: "Choose the output volume.", symbol: "speaker.wave.2",
-            tone: .neutral,
-            actions: [
-                DialogAction(title: "Set Volume"),
-                DialogAction(title: "Cancel", role: .cancel)
-            ],
-            defaultIndex: 0, cancelIndex: 1, accessory: .volume(volume))
-        guard await present(request) == 0 else { return nil }
-        return Float32(volume.level)
-    }
-
-    func createEvent() async -> EventDraft? {
-        let state = EventDraftState()
-        let request = DialogRequest(
-            title: "New Event", message: "It goes on the calendar new events go to.",
-            symbol: "calendar.badge.plus", tone: .neutral,
-            actions: [
-                DialogAction(title: "Create"),
-                DialogAction(title: "Cancel", role: .cancel)
-            ],
-            defaultIndex: 0, cancelIndex: 1, accessory: .eventDraft(state))
-        guard await present(request) == 0, state.draft.isValid else { return nil }
-        return state.draft
-    }
-
-    func fillSnippetArguments(
-        snippetName: String, arguments: [SnippetTemplateEngine.MissingArgument]
-    ) async -> [String: String]? {
-        let state = SnippetArgumentsState(arguments: arguments)
-        let request = DialogRequest(
-            title: snippetName, message: "Fill in the template fields.", symbol: "curlybraces",
-            tone: .neutral,
-            actions: [
-                DialogAction(title: "Expand"),
-                DialogAction(title: "Cancel", role: .cancel)
-            ],
-            defaultIndex: 0, cancelIndex: 1, accessory: .snippetArguments(state))
-        guard await present(request) == 0 else { return nil }
-        return state.values
-    }
-
-    private func present(_ request: DialogRequest) async -> Int {
-        // Keyed on the continuation, so a panel still fading can't swallow the next.
-        guard continuation == nil else { return request.cancelIndex }
-        return await withCheckedContinuation { continuation in
-            self.continuation = continuation
-            onPresentationChanged(true)
-            let width =
-                switch request.accessory {
-                case nil, .volume: metrics.size.dialogCompactWidth
-                case .eventDraft, .snippetArguments: metrics.size.dialogWidth
-                }
-            let content = hostingView(
-                DialogView(
-                    request: request, width: width,
-                    onChoose: { [weak self] index in
-                        guard Self.accepts(index, for: request) else { return }
-                        self?.finish(index)
-                    }),
-                width: width, minHeight: 0)
-            let panel = DialogPanel(content: content, cornerRadius: metrics.radius.panel)
-            panel.handlesArrowKeys = request.accessory?.claimsArrowKeys ?? false
-            panel.delegate = self
-            panel.onKey = { [weak self] key in
-                guard let self else { return }
-                switch key {
-                case .cancel:
-                    finish(request.cancelIndex)
-                case .confirm:
-                    guard Self.accepts(request.defaultIndex, for: request) else { return }
-                    finish(request.defaultIndex)
-                case .increment, .decrement:
-                    // Keying the slider lands on the same values Volume Up/Down produce.
-                    guard case .volume(let volume) = request.accessory else { return }
-                    volume.level = VolumeLevel.stepped(volume.level, up: key == .increment)
+    /// `queued` waits behind the dialog on screen rather than being refused, for a tool call's
+    /// consent; cancelling the caller's task dismisses its dialog, shown or still waiting.
+    private func present(_ request: DialogRequest, queued: Bool = false) async -> Int {
+        // Keyed on `active`, so a panel still fading can't swallow the next.
+        guard !Task.isCancelled, queued || !isBusy else { return request.cancelIndex }
+        let id = UUID()
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                let pending = Pending(id: id, request: request, continuation: continuation)
+                if isBusy {
+                    waiting.append(pending)
+                } else {
+                    show(pending)
                 }
             }
-            self.panel = panel
-            place(panel)
-            show(panel)
+        } onCancel: {
+            Task { @MainActor [weak self] in self?.withdraw(id) }
+        }
+    }
+
+    private var isBusy: Bool { active != nil || !waiting.isEmpty || isAdvancing }
+
+    private func show(_ pending: Pending) {
+        let request = pending.request
+        active = pending
+        onPresentationChanged(true)
+        let width = metrics.size.dialogCompactWidth
+        let content = hostingView(
+            DialogView(
+                request: request, width: width,
+                onChoose: { [weak self] index in self?.finish(index) }),
+            width: width, minHeight: 0)
+        let panel = DialogPanel(content: content, cornerRadius: metrics.radius.panel)
+        panel.delegate = self
+        panel.onKey = { [weak self] key in
+            guard let self else { return }
+            switch key {
+            case .cancel:
+                finish(request.cancelIndex)
+            case .confirm:
+                finish(request.defaultIndex)
+            }
+        }
+        self.panel = panel
+        place(panel)
+        show(panel)
+    }
+
+    /// A cancelled caller's dialog goes away as if dismissed, whether on screen or still queued.
+    private func withdraw(_ id: UUID) {
+        if let active, active.id == id {
+            finish(active.request.cancelIndex)
+        } else if let index = waiting.firstIndex(where: { $0.id == id }) {
+            let pending = waiting.remove(at: index)
+            pending.continuation.resume(returning: pending.request.cancelIndex)
+            if !isBusy { onPresentationChanged(false) }
         }
     }
 
@@ -167,25 +133,37 @@ final class DialogController: NSObject, NSWindowDelegate {
         }
     }
 
-    /// A refused primary action leaves the dialog up, as a greyed-out button would.
-    private static func accepts(_ index: Int, for request: DialogRequest) -> Bool {
-        guard index == request.defaultIndex, case .eventDraft(let state) = request.accessory else {
-            return true
-        }
-        return state.draft.isValid
-    }
-
     /// Resumes before the fade finishes, so a confirmation isn't held up by animation.
     private func finish(_ index: Int) {
-        guard let continuation else { return }
-        self.continuation = nil
-        onPresentationChanged(false)
+        guard let finished = active else { return }
+        active = nil
         let closing = panel
         panel = nil
         closing?.delegate = nil
         closing?.onKey = nil
-        continuation.resume(returning: index)
+        finished.continuation.resume(returning: index)
         closing?.fadeOut(duration: Theme.Duration.dialogExit)
+        guard !waiting.isEmpty else {
+            onPresentationChanged(false)
+            return
+        }
+        // The next waits out the fade, since placement reads the key window, and gives the
+        // reader a beat to see that a different question is now being asked.
+        isAdvancing = true
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Theme.Duration.dialogExit + 0.25))
+            self?.advance()
+        }
+    }
+
+    private func advance() {
+        isAdvancing = false
+        guard active == nil else { return }
+        guard !waiting.isEmpty else {
+            onPresentationChanged(false)
+            return
+        }
+        show(waiting.removeFirst())
     }
 
     private var metrics: InterfaceMetrics { settings.interfaceSize.metrics }

@@ -60,6 +60,11 @@ final class SettingsCoordinator {
     }
 
     func focusExisting() -> Bool {
-        window.focus()
+        guard window.isOpen else { return false }
+        core.onSettingsOpening?()
+        if core.palette.permittedModes != nil, core.paletteCoordinator.isVisible {
+            core.paletteCoordinator.hidePalette(restoreFocus: false)
+        }
+        return window.focus()
     }
 }

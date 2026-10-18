@@ -4,6 +4,7 @@ import Foundation
 enum AIOpensTo: Int, CaseIterable, Identifiable, Sendable {
     case recent = 0
     case newConversation = 1
+    case temporary = 2
 
     var id: Int { rawValue }
 
@@ -11,6 +12,7 @@ enum AIOpensTo: Int, CaseIterable, Identifiable, Sendable {
         switch self {
         case .recent: return "Recent Conversation"
         case .newConversation: return "A New Conversation"
+        case .temporary: return "Temporary Chat"
         }
     }
 }

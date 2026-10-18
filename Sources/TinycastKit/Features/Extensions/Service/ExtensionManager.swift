@@ -46,7 +46,6 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
     @ObservationIgnored private let runtime: ExtensionRuntime
     @ObservationIgnored private let bridge: ExtensionHostBridge
     @ObservationIgnored private let oauthSession = ExtensionOAuthSession()
-    @ObservationIgnored private weak var appIndex: AppIndex?
     @ObservationIgnored private weak var coordinator: ExtensionCoordinator?
 
     /// The entry ids an uninstall invalidated, so another feature can drop what it keyed to them.
@@ -69,8 +68,7 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
     }
 
     /// Wires collaborators only; the coordinator decides whether anything scans.
-    func start(appIndex: AppIndex, coordinator: ExtensionCoordinator) {
-        self.appIndex = appIndex
+    func start(coordinator: ExtensionCoordinator) {
         self.coordinator = coordinator
         runtime.setDelegate(self)
         // Not gated on `isEnabled`: a stranded workspace is ours whether or not the feature is on.
@@ -91,7 +89,6 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
             backgroundTask?.cancel()
             backgroundTask = nil
             installed = []
-            appIndex?.setExtensionCommands([])
             return
         }
         if let coordinator {
@@ -126,7 +123,6 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
     func setShowsInLauncher(_ shows: Bool) {
         guard shows != showsInLauncher else { return }
         showsInLauncher = shows
-        publishLauncherEntries()
     }
 
     // MARK: - Installed set
@@ -137,7 +133,6 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
         guard isEnabled else { return }
         if found != installed {
             installed = found
-            publishLauncherEntries()
             restartBackgroundLoop()
         }
         menuBars?.synchronize(found)
@@ -154,18 +149,6 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
             let command = owner.command(named: reference.commandName)
         else { return nil }
         return entry(for: command, in: owner)
-    }
-
-    private func publishLauncherEntries() {
-        guard isEnabled, showsInLauncher else {
-            appIndex?.setExtensionCommands([])
-            return
-        }
-        let entries =
-            installed
-            .flatMap { owner in owner.manifest.commands.map { entry(for: $0, in: owner) } }
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        appIndex?.setExtensionCommands(entries)
     }
 
     /// One command as a row; a chosen appearance replaces the shipped icon for all of them.
@@ -197,7 +180,6 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
     /// Persist and re-publish, so rows change under the user rather than on the next scan.
     func setAppearance(_ appearance: ExtensionAppearance?, for extensionName: String) {
         appearances.set(appearance, for: extensionName)
-        publishLauncherEntries()
     }
 
     /// An appearance wins, else the shipped artwork; the launcher gets the answer.
@@ -522,7 +504,6 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
     func setBackgroundEnabled(_ enabled: Bool, extension name: String, command: String) {
         commandMetadata.setBackgroundEnabled(enabled, extension: name, command: command)
         if !enabled { commandMetadata.clearBackgroundError(extension: name, command: command) }
-        publishLauncherEntries()
         restartBackgroundLoop()
     }
 
@@ -704,7 +685,6 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
             backgroundRef = nil
             backgroundFailure = nil
             backgroundContinuation = nil
-            publishLauncherEntries()
             storage.flush()
             commandMetadata.flush()
         }
@@ -911,7 +891,6 @@ final class ExtensionManager: ExtensionRuntimeDelegate, ExtensionHostContext {
     func updateCommandMetadata(subtitle: String?, for reference: ExtensionCommandRef) {
         commandMetadata.setSubtitle(
             subtitle, extension: reference.extensionName, command: reference.commandName)
-        publishLauncherEntries()
     }
 
     func present(toast: ExtensionToast) -> Int {
