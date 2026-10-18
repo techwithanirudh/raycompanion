@@ -42,12 +42,6 @@ struct CalcResult: Equatable, Sendable {
         self.payload = payload
         self.canChain = canChain
     }
-
-    /// True only for a copyable value; an error card has no primary action and no actions menu.
-    var isActionable: Bool {
-        if case .value = payload { return true }
-        return false
-    }
 }
 
 /// Raw query to answer, or nil when it isn't calculator input. See docs/features/calculator.md.
@@ -317,5 +311,4 @@ enum CalcEngine {
         default: return nil
         }
     }
-
 }

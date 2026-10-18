@@ -21,12 +21,6 @@ final class RunningAppsMonitor {
         }
     }
 
-    /// True while the entry's bundle runs; drives the running dot and the Quit action.
-    func isRunning(_ app: AppEntry) -> Bool {
-        guard let bundleID = app.bundleID else { return false }
-        return runningBundleIDs.contains(bundleID)
-    }
-
     /// Helpers and agents fire these too, so republish only on a real change.
     private func refresh() {
         let next = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier))

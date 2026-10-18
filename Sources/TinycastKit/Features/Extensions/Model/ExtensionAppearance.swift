@@ -4,8 +4,6 @@ import Foundation
 struct ExtensionAppearance: Codable, Equatable, Hashable, Sendable {
     var symbol: String
     var tint: ExtensionTint
-
-    static let fallback = ExtensionAppearance(symbol: "puzzlepiece.extension", tint: .purple)
 }
 
 /// The Settings sidebar's own family, so an override belongs rather than sticks out.

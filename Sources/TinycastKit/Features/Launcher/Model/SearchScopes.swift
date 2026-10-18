@@ -16,20 +16,8 @@ enum SearchScopes {
         "~/Applications"
     ]
 
-    /// Tilde-abbreviated and unslashed, so a settings backup stays portable across machines.
-    static func abbreviate(_ path: String) -> String {
-        let trimmed = trimTrailingSlash(path)
-        return (trimmed as NSString).abbreviatingWithTildeInPath
-    }
-
     static func expand(_ path: String) -> String {
         (trimTrailingSlash(path) as NSString).expandingTildeInPath
-    }
-
-    /// Abbreviates every path and drops duplicates, preserving order.
-    static func normalize(_ paths: [String]) -> [String] {
-        var seen = Set<String>()
-        return paths.map(abbreviate).filter { !$0.isEmpty && seen.insert($0).inserted }
     }
 
     /// Where a bundle ships its own apps: Xcode keeps Instruments and Simulator there.

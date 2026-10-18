@@ -19,9 +19,6 @@ struct ColorValue: Equatable, Sendable {
     private static func clamp(_ value: Double) -> Double {
         value.isFinite ? min(max(value, 0), 1) : 0
     }
-
-    /// Every notation states 8 bits, so alpha that rounds back to opaque is opaque.
-    var hasAlpha: Bool { (alpha * 255).rounded() < 255 }
 }
 
 extension ColorValue {
@@ -43,26 +40,6 @@ extension ColorValue {
             default: (chroma, 0, second)
             }
         self.init(red: red + base, green: green + base, blue: blue + base, alpha: alpha)
-    }
-
-    /// Hue, saturation and lightness, the inverse of the HSL initialiser.
-    var hsl: (hue: Double, saturation: Double, lightness: Double) {
-        let maximum = max(red, green, blue)
-        let minimum = min(red, green, blue)
-        let chroma = maximum - minimum
-        let lightness = (maximum + minimum) / 2
-        // Rounding leaves a chroma of ~1e-16 at a lightness of 1, whose divisor below is 0.
-        let span = 1 - abs(2 * lightness - 1)
-        guard chroma > 0, span > 0 else { return (0, 0, lightness) }
-        let hue: Double =
-            switch maximum {
-            case red: 60 * ((green - blue) / chroma).truncatingRemainder(dividingBy: 6)
-            case green: 60 * ((blue - red) / chroma + 2)
-            default: 60 * ((red - green) / chroma + 4)
-            }
-        return (
-            hue < 0 ? hue + 360 : hue, min(chroma / span, 1), lightness
-        )
     }
 
     /// A colour is one bare token, so anything past the longest `hsla()` form is not one.

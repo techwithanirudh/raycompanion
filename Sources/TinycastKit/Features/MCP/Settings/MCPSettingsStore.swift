@@ -21,10 +21,6 @@ final class MCPSettingsStore {
         servers.first { $0.id == id }
     }
 
-    func server(slug: String) -> MCPServer? {
-        servers.first { $0.slug == slug }
-    }
-
     var enabledServers: [MCPServer] {
         servers.filter(\.isEnabled)
     }

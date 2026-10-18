@@ -11,33 +11,6 @@ struct SettingsAnchor: Hashable, Sendable {
 
 // Named `<pane><Section>` throughout, so the constant for a section is always guessable from it.
 extension SettingsAnchor {
-    static let generalGlobalShortcuts = Self(tab: .general, title: "Global Shortcuts")
-    static let generalSearch = Self(tab: .general, title: "Search")
-    static let generalHyperKey = Self(tab: .general, title: "Hyper Key")
-    static let generalAppearance = Self(tab: .general, title: "Appearance")
-    static let generalCalculator = Self(tab: .general, title: "Calculator")
-    static let generalGeneral = Self(tab: .general, title: "General")
-
-    static let applicationsSearchScopes = Self(tab: .applications, title: "Search Scopes")
-    static let applicationsApplications = Self(tab: .applications, title: "Applications")
-
-    static let systemSettingsSystemSettings = Self(tab: .systemSettings, title: "System Settings")
-
-    static let systemActionsSystemActions = Self(tab: .systemActions, title: "System Actions")
-
-    static let commandsCommands = Self(tab: .commands, title: "Commands")
-    static let commandsCustomCommands = Self(tab: .commands, title: "Custom Commands")
-
-    static let quicklinksQuicklinks = Self(tab: .quicklinks, title: "Quicklinks")
-    static let quicklinksCommands = Self(tab: .quicklinks, title: "Commands")
-    static let quicklinksBehaviour = Self(tab: .quicklinks, title: "Behaviour")
-    static let quicklinksImportExport = Self(tab: .quicklinks, title: "Import & Export")
-
-    static let appleShortcutsAppleShortcuts = Self(tab: .appleShortcuts, title: "Apple Shortcuts")
-    static let appleShortcutsShortcuts = Self(tab: .appleShortcuts, title: "Shortcuts")
-
-    static let fallbacksFallbacks = Self(tab: .fallbacks, title: "Fallbacks")
-
     static let aiAI = Self(tab: .ai, title: "AI")
     static let aiProviders = Self(tab: .ai, title: "Providers")
     static let aiDefault = Self(tab: .ai, title: "Default")
@@ -48,75 +21,18 @@ extension SettingsAnchor {
     static let aiMCPServers = Self(tab: .ai, title: "MCP Servers")
     static let aiCommands = Self(tab: .ai, title: "Commands")
 
-    static let quickActionsQuickActions = Self(tab: .quickActions, title: "Quick Actions")
-    static let quickActionsActions = Self(tab: .quickActions, title: "Actions")
-    static let quickActionsModel = Self(tab: .quickActions, title: "Model")
-    static let quickActionsTranslate = Self(tab: .quickActions, title: "Translate")
-
     static let dictationDictation = Self(tab: .dictation, title: "Dictation")
     static let dictationCommands = Self(tab: .dictation, title: "Commands")
     static let dictationModel = Self(tab: .dictation, title: "Model")
     static let dictationMemory = Self(tab: .dictation, title: "Memory")
     static let dictationOutput = Self(tab: .dictation, title: "Output")
 
-    static let fileSearchFileSearch = Self(tab: .fileSearch, title: "File Search")
-    static let fileSearchCommands = Self(tab: .fileSearch, title: "Commands")
-    static let fileSearchSearchScopes = Self(tab: .fileSearch, title: "Search Scopes")
-    static let fileSearchIgnorePatterns = Self(tab: .fileSearch, title: "Ignore Patterns")
-
-    static let notesNotes = Self(tab: .notes, title: "Notes")
-    static let notesOptions = Self(tab: .notes, title: "Options")
-    static let notesCommands = Self(tab: .notes, title: "Commands")
-
-    static let snippetsSnippets = Self(tab: .snippets, title: "Snippets")
-    static let snippetsCommands = Self(tab: .snippets, title: "Commands")
-    static let snippetsLibrary = Self(tab: .snippets, title: "Library")
-
-    static let navigationNavigation = Self(tab: .navigation, title: "Navigation")
-    static let navigationCommands = Self(tab: .navigation, title: "Commands")
-    static let navigationMenuSearch = Self(tab: .navigation, title: "Search Menu Bar Items")
-
-    static let windowManagementWindowManagement = Self(
-        tab: .windowManagement, title: "Window Management")
-    static let windowManagementLayouts = Self(tab: .windowManagement, title: "Window Layouts")
-    static let windowManagementRooms = Self(tab: .windowManagement, title: "Rooms")
-    static let windowManagementLayoutCommands = Self(
-        tab: .windowManagement, title: "Layout and Room Commands")
-    static let windowManagementOptions = Self(tab: .windowManagement, title: "Options")
-    static let windowManagementCustomSizes = Self(tab: .windowManagement, title: "Custom Sizes")
-
-    static let clipboardClipboard = Self(tab: .clipboard, title: "Clipboard")
-    static let clipboardCommands = Self(tab: .clipboard, title: "Commands")
-    static let clipboardHistory = Self(tab: .clipboard, title: "History")
-    static let clipboardDisabledApplications = Self(
-        tab: .clipboard, title: "Disabled Applications")
-
-    static let emojiCommands = Self(tab: .emoji, title: "Commands")
-    static let emojiAppearance = Self(tab: .emoji, title: "Appearance")
-
-    static let calendarCalendar = Self(tab: .calendar, title: "Calendar")
-    static let calendarCommands = Self(tab: .calendar, title: "Commands")
-    static let calendarJoining = Self(tab: .calendar, title: "Joining")
-    static let calendarMenuBar = Self(tab: .calendar, title: "Menu Bar")
-    static let calendarCalendars = Self(tab: .calendar, title: "Calendars")
-
-    static let extensionsExtensions = Self(tab: .extensions, title: "Extensions")
-    static let extensionsCompatibility = Self(tab: .extensions, title: "Compatibility")
     static let extensionsInstalled = Self(tab: .extensions, title: "Installed")
-    static let extensionsInstall = Self(tab: .extensions, title: "Install")
-    static let extensionsStorage = Self(tab: .extensions, title: "Storage")
 
     static let permissionsAccessibility = Self(tab: .permissions, title: String(localized: PermissionFlowResources.accessibilityNameResource))
-    static let permissionsCalendars = Self(tab: .permissions, title: "Calendars")
     static let permissionsMicrophone = Self(tab: .permissions, title: "Microphone")
 
-    static let backupExport = Self(tab: .backup, title: "Export")
-    static let backupImport = Self(tab: .backup, title: "Import")
-    static let backupImportFromRaycast = Self(tab: .backup, title: "Import from Raycast")
-    static let backupSettingsFile = Self(tab: .backup, title: "Settings File")
-
     static let aboutAbout = Self(tab: .about, title: "About")
-    static let aboutLinks = Self(tab: .about, title: "Links")
 }
 
 /// Where a search result lands: a whole section, or one row inside it.

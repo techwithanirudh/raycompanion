@@ -43,43 +43,6 @@ private func hyperKeyEventTapCallback(
     }
 }
 
-/// HID remap of Caps Lock → F18 while it is Hyper. See docs/features/hotkeys.md#the-hyper-key.
-private enum CapsLockRemap {
-    // HID usages: keyboard page 0x07, Caps Lock 0x39, F18 0x6D.
-    private static let mappingOn =
-        #"{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":0x700000039,"HIDKeyboardModifierMappingDst":0x70000006D}]}"#
-    private static let mappingOff = #"{"UserKeyMapping":[]}"#
-
-    // Serial, so rapid on→off→on toggles apply in call order rather than racing.
-    private static let queue = DispatchQueue(label: "com.tinycast.capslock-remap", qos: .utility)
-
-    static func setEnabled(_ enabled: Bool) {
-        let mapping = enabled ? mappingOn : mappingOff
-        queue.async { apply(mapping) }
-    }
-
-    /// Synchronous variant for `applicationWillTerminate`, where detached work wouldn't get to run.
-    static func clearBlocking() {
-        apply(mappingOff)
-    }
-
-    private static func apply(_ mapping: String) {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/hidutil")
-        process.arguments = ["property", "--set", mapping]
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = FileHandle.nullDevice
-        do {
-            try process.runObservingExit().wait()
-            if process.terminationStatus != 0 {
-                NSLog("Tinycast: hidutil remap exited %d", process.terminationStatus)
-            }
-        } catch {
-            NSLog("Tinycast: hidutil caps lock remap failed: %@", error.localizedDescription)
-        }
-    }
-}
-
 /// The Hyper Key engine, a modifying tap. See docs/features/hotkeys.md#the-hyper-key.
 @MainActor
 @Observable
@@ -118,10 +81,7 @@ final class HyperKeyTap: HealthCheckable {
     // Raw CF handles the tap callback and teardown reach; never a view dependency.
     @ObservationIgnored private var tapPort: CFMachPort?
     @ObservationIgnored private var runLoopSource: CFRunLoopSource?
-    @ObservationIgnored private var sessionTokens: [NotificationToken] = []
     @ObservationIgnored private var hidConnect: io_connect_t = IO_OBJECT_NULL
-
-    @ObservationIgnored weak var healthTicker: HealthTicker?
 
     /// Mirror of `settings.hyperKey`; the toggles are read live, so nothing goes stale.
     @ObservationIgnored private var key: HyperKeyPhysicalKey = .none
@@ -136,44 +96,6 @@ final class HyperKeyTap: HealthCheckable {
     // Isolated so teardown can release the main-actor IOKit connection.
     isolated deinit {
         if hidConnect != IO_OBJECT_NULL { IOServiceClose(hidConnect) }
-    }
-
-    func start(settings: AppSettings) {
-        self.settings = settings
-        applyKey(settings.hyperKey)
-        observeKey()
-
-        // Fast user switching: drop half-held state and stop rewriting until we are back.
-        let center = NSWorkspace.shared.notificationCenter
-        sessionTokens = [
-            NotificationToken(
-                center.addObserver(
-                    forName: NSWorkspace.sessionDidResignActiveNotification, object: nil,
-                    queue: .main
-                ) { [weak self] _ in
-                    MainActor.assumeIsolated { self?.sessionDidResign() }
-                }, center: center),
-            NotificationToken(
-                center.addObserver(
-                    forName: NSWorkspace.sessionDidBecomeActiveNotification, object: nil,
-                    queue: .main
-                ) { [weak self] _ in
-                    MainActor.assumeIsolated { self?.sessionDidBecomeActive() }
-                }, center: center)
-        ]
-    }
-
-    /// Fires synchronously on main before the write lands, so the task re-arms, then applies.
-    private func observeKey() {
-        withObservationTracking {
-            _ = settings?.hyperKey
-        } onChange: { [weak self] in
-            Task { @MainActor in
-                guard let self else { return }
-                self.observeKey()
-                self.applyKey(self.settings?.hyperKey ?? .none)
-            }
-        }
     }
 
     // MARK: - Hyper chord flags
@@ -306,40 +228,7 @@ final class HyperKeyTap: HealthCheckable {
         otherKeyPressed = false
     }
 
-    // MARK: - Configuration
-
-    private func applyKey(_ newKey: HyperKeyPhysicalKey) {
-        guard newKey != key else { return }
-        cancelHold()
-        let wasCapsLock = key == .capsLock
-        key = newKey
-        if newKey == .capsLock {
-            // Remapping takes the key's own function away, so unlatch the lock first.
-            setCapsLockState(false)
-            CapsLockRemap.setEnabled(true)
-        } else if wasCapsLock {
-            CapsLockRemap.setEnabled(false)
-        }
-        syncTapPresence()
-    }
-
-    /// The HID remap outlives the process, so hand the key back before exiting.
-    func prepareForTermination() {
-        if key == .capsLock { CapsLockRemap.clearBlocking() }
-    }
-
     // MARK: - Tap lifecycle
-
-    private func syncTapPresence() {
-        if key == .none {
-            tearDownTap()
-            healthTicker?.unsubscribe(self)
-            status = .off
-        } else {
-            healthTicker?.subscribe(self)
-            installTapIfNeeded()
-        }
-    }
 
     private func installTapIfNeeded() {
         guard tapPort == nil, key != .none else { return }
@@ -396,20 +285,6 @@ final class HyperKeyTap: HealthCheckable {
             status = .needsAccessibility
         } else if let tapPort, !CGEvent.tapIsEnabled(tap: tapPort) {
             CGEvent.tapEnable(tap: tapPort, enable: true)
-        }
-
-    }
-
-    private func sessionDidResign() {
-        cancelHold()
-        if let tapPort { CGEvent.tapEnable(tap: tapPort, enable: false) }
-    }
-
-    private func sessionDidBecomeActive() {
-        if let tapPort {
-            CGEvent.tapEnable(tap: tapPort, enable: true)
-        } else {
-            installTapIfNeeded()
         }
     }
 

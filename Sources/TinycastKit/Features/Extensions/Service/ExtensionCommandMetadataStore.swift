@@ -31,10 +31,6 @@ final class ExtensionCommandMetadataStore {
         mutate(name, command) { $0.subtitle = subtitle }
     }
 
-    func setBackgroundEnabled(_ enabled: Bool, extension name: String, command: String) {
-        mutate(name, command) { $0.backgroundEnabled = enabled }
-    }
-
     func menuBarCommands() -> [(extension: String, command: String)] {
         records.flatMap { name, commands in
             commands.filter(\.value.menuBarEnabled).keys.map { (extension: name, command: $0) }
@@ -87,11 +83,6 @@ final class ExtensionCommandMetadataStore {
             $0.lastError = success ? nil : error
             $0.consecutiveFailures = success ? 0 : $0.consecutiveFailures + 1
         }
-    }
-
-    func removeAll(extension name: String) {
-        guard records.removeValue(forKey: name) != nil else { return }
-        scheduleFlush()
     }
 
     func flush() {

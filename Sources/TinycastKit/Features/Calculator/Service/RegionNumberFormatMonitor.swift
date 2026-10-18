@@ -18,10 +18,6 @@ final class RegionNumberFormatMonitor {
         if let token { NotificationCenter.default.removeObserver(token) }
     }
 
-    func format(for style: CalcNumberStyle) -> CalcNumberFormat {
-        style == .system ? system : .english
-    }
-
     /// Separators the parser can't take, such as the Arabic `٫`, fall back to English.
     private static func read() -> CalcNumberFormat {
         let locale = Locale.autoupdatingCurrent

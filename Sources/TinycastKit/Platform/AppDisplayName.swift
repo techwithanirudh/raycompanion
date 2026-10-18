@@ -8,13 +8,6 @@ enum AppDisplayName {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }
-
-    /// The name a raw Info.plist carries, for callers holding one without a `Bundle` to open.
-    static func inInfo(_ info: [String: Any]) -> String? {
-        // `CFBundle` reads the `-macos` variant first; Image Playground's loctable ships both.
-        named(info["CFBundleDisplayName-macos"]) ?? named(info["CFBundleDisplayName"])
-            ?? named(info["CFBundleName-macos"]) ?? named(info["CFBundleName"])
-    }
 }
 
 extension Bundle {

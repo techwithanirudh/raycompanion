@@ -76,21 +76,6 @@ final class InstalledAIManager {
     }
 
     @discardableResult
-    func refresh(
-        enabledKinds: Set<InstalledAIKind> = Set(InstalledAIKind.managedCLIKinds)
-    ) -> Task<Void, Never> {
-        var tasks: [Task<Void, Never>] = []
-        for kind in InstalledAIKind.managedCLIKinds {
-            if enabledKinds.contains(kind) {
-                tasks.append(refresh(kind: kind))
-            } else {
-                stop(kind: kind)
-            }
-        }
-        return Task { for task in tasks { await task.value } }
-    }
-
-    @discardableResult
     func refresh(kind: InstalledAIKind) -> Task<Void, Never> {
         guard kind != .codex else { return Task {} }
         refreshTasks[kind]?.cancel()

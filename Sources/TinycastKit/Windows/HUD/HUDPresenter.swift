@@ -42,21 +42,6 @@ final class HUDPresenter {
         if dwells { scheduleDismissal() } else { dismissal?.cancel() }
     }
 
-    func dismiss() {
-        dismissal?.cancel()
-        guard let panel, panel.isVisible else { return }
-        panel.fadeOut(duration: Theme.Duration.exit)
-    }
-
-    /// Re-arms the dismissal, so a repeat extends the dwell rather than replaying it.
-    func extend() {
-        guard let panel, panel.isVisible else { return }
-        panel.cancelFade()
-        scheduleDismissal()
-    }
-
-    var isShowing: Bool { panel?.isVisible ?? false }
-
     private func scheduleDismissal() {
         dismissal?.cancel()
         dismissal = Task { [weak self, dwell] in

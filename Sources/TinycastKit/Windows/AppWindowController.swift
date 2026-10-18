@@ -37,20 +37,6 @@ final class AppWindowController: NSObject, NSWindowDelegate {
         self.closesOnEscape = closesOnEscape
     }
 
-    /// Returns `true` when a window was built, `false` when an already-open one was re-raised.
-    @discardableResult
-    func show<Content: View>(
-        chrome: WindowChrome? = nil, @ViewBuilder content: () -> Content
-    ) -> Bool {
-        let root = content()
-        return show(chrome: chrome) {
-            let hosting = NSHostingController(rootView: root)
-            // Keep the window's size authoritative: an unconstrained fill would drive the frame.
-            hosting.sizingOptions = []
-            return hosting
-        }
-    }
-
     /// A prebuilt controller; Settings needs one to bridge its SwiftUI toolbar into the window.
     @discardableResult
     func show(chrome: WindowChrome? = nil, contentViewController: () -> NSViewController) -> Bool {
@@ -78,20 +64,6 @@ final class AppWindowController: NSObject, NSWindowDelegate {
 
     func close() {
         window?.close()
-    }
-
-    /// The title bar sits inside the frame but outside the layout area, so it is added back.
-    func fitContent(width: CGFloat, height: CGFloat) {
-        guard let window else { return }
-        let titlebar = window.frame.height - window.contentLayoutRect.height
-        let size = CGSize(width: width, height: height + titlebar)
-        guard window.contentMinSize != size else { return }
-        let top = window.frame.maxY
-        window.contentMinSize = size
-        window.setContentSize(size)
-        var frame = window.frame
-        frame.origin.y = top - frame.height
-        window.setFrame(frame, display: true, animate: false)
     }
 
     // MARK: - NSWindowDelegate

@@ -97,11 +97,6 @@ final class FileSearchSession {
         state = .idle
     }
 
-    /// A trashed row names a file that is gone, so it leaves the published results with it.
-    func remove(_ result: FileSearchResult) {
-        results.removeAll { $0.id == result.id }
-    }
-
     private func runWorker() async {
         while let pending = pendingSearch {
             let delay = ContinuousClock.now.duration(to: pending.earliestStart)

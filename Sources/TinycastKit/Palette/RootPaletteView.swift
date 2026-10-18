@@ -7,7 +7,6 @@ struct RootPaletteView: View {
     @Environment(ExtensionManager.self) private var extensions
     @Environment(AppSettings.self) private var settings
     @Environment(\.metrics) private var metrics
-    @Environment(\.openURL) private var openURL
     @FocusState private var searchFocused: Bool
     /// Kept apart from the search field's own focus. See docs/features/palette.md.
     @FocusState private var argumentFocused: String?
@@ -238,8 +237,6 @@ struct RootPaletteView: View {
                 .clipShape(RoundedRectangle(cornerRadius: metrics.radius.panel, style: .continuous))),
             selection: sel)
     }
-
-
 
     /// Split from `body` for the same reason `keyHandlers` is: one chain cannot carry them all.
     @ViewBuilder
@@ -1027,16 +1024,6 @@ struct RootPaletteView: View {
         }
     }
 
-    /// An action can remove the last visible pin; never leave an invisible menu owning input.
-    private func refreshActionsMenu() {
-        guard openMenu == .actions else { return }
-        guard menuContent != nil else {
-            closeMenus()
-            return
-        }
-        syncMenuPanel(presenting: false)
-    }
-
     /// A row is addressed by index, so a file staged or dropped under the open menu re-lays it.
     private func refreshAttachmentsMenu() {
         guard openMenu == .aiAttachments else { return }
@@ -1102,7 +1089,6 @@ struct RootPaletteView: View {
         scroll = ScrollIntent(kind: .follow)
         return true
     }
-
 
     /// Move the open menu's highlight past rows it cannot land on, stopping at the ends (no wrap).
     private func moveMenu(_ delta: Int) {
@@ -1203,15 +1189,6 @@ struct RootPaletteView: View {
         vm.pendingArgumentEntryID = nil
     }
 
-    /// An `options=` field is chosen from the palette's own menu, never typed into.
-    private func openArgumentOptions(_ field: String) {
-        guard let accessory = headerAccessory, accessory.optionsMenu(field) != nil else { return }
-        argumentFocused = field
-        searchFocused = false
-        argumentOptionsField = field
-        open(.argumentOptions, highlighting: 0)
-    }
-
     /// An extension keeps its own stack, so it can have a step back the palette cannot see.
     private var hasBackStep: Bool {
         vm.canGoBack || (vm.mode == .extensionCommand && extensions.navigationDepth > 1)
@@ -1243,7 +1220,6 @@ struct RootPaletteView: View {
         let screen = screen
         screen.activate(at: selection(in: screen))
     }
-
 }
 
 /// The palette's in-window menus. One optional of these is the whole "only one is open" invariant.

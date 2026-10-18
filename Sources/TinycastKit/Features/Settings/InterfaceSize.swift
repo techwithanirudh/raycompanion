@@ -8,14 +8,6 @@ enum InterfaceSize: String, CaseIterable, Identifiable, Sendable {
 
     var id: String { rawValue }
 
-    var title: String {
-        switch self {
-        case .standard: "Default"
-        case .large: "Large"
-        case .larger: "Larger"
-        }
-    }
-
     var scale: CGFloat {
         switch self {
         case .standard: 1

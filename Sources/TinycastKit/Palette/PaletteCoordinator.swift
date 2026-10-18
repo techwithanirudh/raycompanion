@@ -28,40 +28,15 @@ final class PaletteCoordinator {
 
     var isVisible: Bool { windowController.isVisible }
 
-    var panelFrame: CGRect? { windowController.visibleFrame }
-
-    /// The palette's own view, for AppKit UI anchored to it — a sharing picker, say.
-    var anchorView: NSView? { windowController.anchorView }
-
     /// The app an action acts on: the one displaced, else what a hotkey found frontmost.
     var targetApp: NSRunningApplication? {
         windowController.isVisible
             ? windowController.previousApp : NSWorkspace.shared.frontmostApplication
     }
 
-    /// The own window the palette covered, for anything acting on it after the palette hides.
-    var previousOwnWindow: NSWindow? { windowController.previousOwnWindow }
-
     /// Up and pointed at `mode`, which is the state a mode command's second invocation closes.
     func isShowing(_ mode: PaletteMode) -> Bool {
         windowController.isVisible && palette.mode == mode
-    }
-
-    func togglePalette() {
-        if isShowing(.launcher) {
-            hidePalette()
-        } else {
-            showPalette(mode: .launcher, restoreAnyMode: true)
-        }
-    }
-
-    /// A carried query always opens: it is new input, not the second press that would close.
-    func togglePalette(mode: PaletteMode, seeding query: String? = nil) {
-        if isShowing(mode), query == nil {
-            hidePalette()
-        } else {
-            showPalette(mode: mode, seeding: query)
-        }
     }
 
     /// Navigating keeps the screen under as the back step; the launcher is the root and never has one.
@@ -93,25 +68,9 @@ final class PaletteCoordinator {
         if palette.mode == .launcher { onLauncherShown?() }
     }
 
-    /// Root search onto `entry` alone, as Raycast opens a command whose shortcut lacks values.
-    func showArguments(of entry: AppEntry, values: [String: String]) {
-        showPalette(mode: .launcher, seeding: entry.name)
-        // After the show: `prepare` runs inside it and would clear everything set beforehand.
-        palette.argumentEntryID = entry.id
-        for (field, value) in values {
-            palette.commandArguments[PaletteState.argumentKey(entry.id, field)] = value
-        }
-        palette.pendingArgumentEntryID = entry.id
-    }
-
     func hidePalette(restoreFocus: Bool = true) {
         fileSearch.cancel()
         windowController.hide(restoreFocus: restoreFocus)
-    }
-
-    /// A row dragged out and landed is a finished errand, so the palette leaves as after a paste.
-    func dragLanded() {
-        hidePalette(restoreFocus: false)
     }
 
     /// Reset to the root search now rather than after the Pop to Root Search delay.

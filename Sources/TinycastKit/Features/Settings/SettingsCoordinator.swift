@@ -49,10 +49,6 @@ final class SettingsCoordinator {
         showSettings(tab: .about)
     }
 
-    func showBackupSettings() {
-        showSettings(tab: .backup)
-    }
-
     /// ⌘Q and the window's close button land here; the app itself keeps running.
     func closeSettings() {
         editorPresenter?.dismissAll()

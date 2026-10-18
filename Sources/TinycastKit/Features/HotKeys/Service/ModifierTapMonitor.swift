@@ -62,7 +62,6 @@ final class ModifierTapMonitor: HealthCheckable {
     private var holding = false
     @ObservationIgnored private var tapPort: CFMachPort?
     @ObservationIgnored private var runLoopSource: CFRunLoopSource?
-    @ObservationIgnored private var sessionTokens: [NotificationToken] = []
     private var sessionActive = true
     private var loggedTapFailure = false
 
@@ -71,11 +70,6 @@ final class ModifierTapMonitor: HealthCheckable {
     // The tap holds an unretained `self`, so it must not outlive it.
     isolated deinit {
         tearDownTap()
-    }
-
-    func start() {
-        installObserversIfNeeded()
-        syncTapPresence()
     }
 
     /// Modifier-only bindings currently assigned; an empty set tears the tap down entirely.
@@ -213,34 +207,6 @@ final class ModifierTapMonitor: HealthCheckable {
     }
 
     // MARK: - Tap lifecycle
-
-    private func installObserversIfNeeded() {
-        guard sessionTokens.isEmpty else { return }
-        // Fast user switching: another session owns the keyboard, so stop watching.
-        let center = NSWorkspace.shared.notificationCenter
-        sessionTokens = [
-            NotificationToken(
-                center.addObserver(
-                    forName: NSWorkspace.sessionDidResignActiveNotification, object: nil,
-                    queue: .main
-                ) { [weak self] _ in
-                    MainActor.assumeIsolated { self?.sessionDidChange(active: false) }
-                }, center: center),
-            NotificationToken(
-                center.addObserver(
-                    forName: NSWorkspace.sessionDidBecomeActiveNotification, object: nil,
-                    queue: .main
-                ) { [weak self] _ in
-                    MainActor.assumeIsolated { self?.sessionDidChange(active: true) }
-                }, center: center)
-        ]
-    }
-
-    private func sessionDidChange(active: Bool) {
-        sessionActive = active
-        resetDetectors()
-        syncTapPresence()
-    }
 
     private func syncTapPresence() {
         guard !bound.isEmpty, sessionActive else {

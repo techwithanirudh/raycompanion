@@ -6,7 +6,6 @@ protocol ExtensionOAuthTokenStore: Sendable {
     func get(account: String) -> String?
     func set(_ value: String, account: String) -> Bool
     func remove(account: String) -> Bool
-    func removeAll(prefix: String, exactMatch: String)
 }
 
 struct KeychainOAuthTokenStore: ExtensionOAuthTokenStore {
@@ -62,31 +61,6 @@ struct KeychainOAuthTokenStore: ExtensionOAuthTokenStore {
         let status = SecItemDelete(query as CFDictionary)
         return status == errSecSuccess || status == errSecItemNotFound
     }
-
-    func removeAll(prefix: String, exactMatch: String) {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: serviceName,
-            kSecReturnAttributes as String: true,
-            kSecMatchLimit as String: kSecMatchLimitAll
-        ]
-
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        guard status == errSecSuccess, let items = item as? [[String: Any]] else { return }
-
-        for attributes in items {
-            guard let account = attributes[kSecAttrAccount as String] as? String else { continue }
-            if account == exactMatch || account.hasPrefix(prefix) {
-                let deleteQuery: [String: Any] = [
-                    kSecClass as String: kSecClassGenericPassword,
-                    kSecAttrService as String: serviceName,
-                    kSecAttrAccount as String: account
-                ]
-                SecItemDelete(deleteQuery as CFDictionary)
-            }
-        }
-    }
 }
 
 /// Secure storage for extension OAuth tokens, keyed by extension name and provider.
@@ -115,9 +89,5 @@ enum ExtensionOAuthKeychain {
     static func removeTokens(extensionName: String, providerId: String?) -> Bool {
         let account = accountKey(extensionName: extensionName, providerId: providerId)
         return store.remove(account: account)
-    }
-
-    static func removeAllTokens(extensionName: String) {
-        store.removeAll(prefix: "\(extensionName):", exactMatch: extensionName)
     }
 }

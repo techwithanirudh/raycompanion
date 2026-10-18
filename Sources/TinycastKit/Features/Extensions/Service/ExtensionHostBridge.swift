@@ -135,12 +135,6 @@ final class ExtensionHostBridge: ExtensionHostAPI {
         self.fetcher = fetcher
     }
 
-    func scoped(to context: ExtensionHostContext) -> ExtensionHostBridge {
-        let bridge = ExtensionHostBridge(clipboardStore: clipboardStore, fetcher: fetcher)
-        bridge.context = context
-        return bridge
-    }
-
     func perform(api: String, method: String, arguments: [RenderValue]) async throws -> String {
         guard context != nil else { throw ExtensionHostError.noActiveExtension }
         let value = try await dispatch(api: api, method: method, arguments: arguments)

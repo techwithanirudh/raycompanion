@@ -22,19 +22,6 @@ enum ExtensionIconCache {
 
     // MARK: - Shipped with the extension
 
-    /// Cache-only, so a warm row paints on the same frame.
-    static func cached(atPath path: String) -> NSImage? {
-        IconCache.cachedArtwork(atPath: path, extent: extent)
-    }
-
-    /// Read from the file: `NSWorkspace` would answer a PNG with the generic document icon.
-    static func icon(atPath path: String) -> NSImage {
-        guard FileManager.default.fileExists(atPath: path) else {
-            return IconCache.symbolIcon(named: "puzzlepiece.extension")
-        }
-        return IconCache.artwork(atPath: path, extent: extent)
-    }
-
     static func loadAsync(atPath path: String) async -> NSImage? {
         guard FileManager.default.fileExists(atPath: path) else {
             return IconCache.symbolIcon(named: "puzzlepiece.extension")

@@ -18,8 +18,6 @@ struct ExtensionGridGeometry {
         self.starts = starts
     }
 
-    var cellCount: Int { counts.reduce(0, +) }
-
     func down(from index: Int) -> Int {
         guard let section = section(of: index) else { return index }
         let local = index - starts[section]

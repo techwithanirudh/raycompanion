@@ -76,19 +76,10 @@ final class AIChatCoordinator {
         }
     }
 
-    func toggleWindow() {
-        guard !closeWindowIfKey() else { return }
-        showWindow()
-    }
-
     /// The window's views read these through the coordinator, never through `AppCore`.
     var history: ChatHistoryStore { core.chatHistory }
     var aiSettings: AISettingsStore { core.aiSettings }
     var dictation: DictationCoordinator { core.dictationCoordinator }
-
-    func focusExisting() -> Bool {
-        window.focus()
-    }
 
     /// ⌘Q's target while the window is key; false leaves the chord to Settings.
     func closeWindowIfKey() -> Bool {

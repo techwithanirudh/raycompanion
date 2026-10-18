@@ -2,8 +2,6 @@ import AppKit
 import SwiftUI
 
 struct AboutView: View {
-    @Environment(AppCore.self) private var core
-
     private static var version: String {
         let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "—"
@@ -69,5 +67,4 @@ struct AboutView: View {
                 .foregroundStyle(.secondary)
         }
     }
-
 }

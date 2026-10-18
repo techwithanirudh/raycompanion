@@ -36,19 +36,6 @@ enum FileSearchFilter: CaseIterable, Sendable {
         }
     }
 
-    /// What an empty list says, so a filter hiding every match explains itself.
-    var emptyMessage: String {
-        switch self {
-        case .all: return "No files found"
-        case .folders: return "No folders found"
-        case .documents: return "No documents found"
-        case .images: return "No images found"
-        case .audio: return "No audio found"
-        case .video: return "No videos found"
-        case .archives: return "No archives found"
-        }
-    }
-
     /// The types a case admits; `all` names none, which is what keeps an unfiltered search free.
     var contentTypes: [UTType] {
         switch self {

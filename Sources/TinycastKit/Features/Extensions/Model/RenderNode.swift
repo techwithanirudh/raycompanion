@@ -66,15 +66,6 @@ enum RenderValue: Sendable, Hashable {
         return nil
     }
 
-    /// A slot prop holding several nodes (`ActionPanel` children hoisted from a submenu) or one.
-    var nodesValue: [RenderNode] {
-        switch self {
-        case .node(let node): return [node]
-        case .array(let values): return values.compactMap(\.nodeValue)
-        default: return []
-        }
-    }
-
     /// Plain-JSON form, for handing a value back to JS unchanged (a Form field's current value).
     var jsonValue: Any {
         switch self {
@@ -181,28 +172,8 @@ struct RenderNode: Sendable, Hashable, Identifiable {
     func date(_ key: String) -> Date? { props[key]?.dateValue }
     func handler(_ key: String) -> String? { props[key]?.handlerID }
     func node(_ key: String) -> RenderNode? { props[key]?.nodeValue }
-    func nodes(_ key: String) -> [RenderNode] { props[key]?.nodesValue ?? [] }
     func array(_ key: String) -> [RenderValue] { props[key]?.arrayValue ?? [] }
     func object(_ key: String) -> [String: RenderValue]? { props[key]?.objectValue }
-
-    /// How `Form.Description`-style content and stray JSX strings arrive.
-    var textContent: String {
-        children.compactMap { $0.isText ? $0.text : nil }.joined()
-    }
-
-    /// Depth-first search for the first descendant of `type`, following hoisted slot props too.
-    func firstDescendant(ofType type: String) -> RenderNode? {
-        if self.type == type { return self }
-        for child in children {
-            if let hit = child.firstDescendant(ofType: type) { return hit }
-        }
-        for value in props.values {
-            for node in value.nodesValue {
-                if let hit = node.firstDescendant(ofType: type) { return hit }
-            }
-        }
-        return nil
-    }
 }
 
 /// The root the runtime pushes after every commit: one `__screen` per stack entry.

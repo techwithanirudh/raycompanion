@@ -11,10 +11,6 @@ enum PopToRootTimeout: Int, CaseIterable, Identifiable, Sendable {
 
     var id: Int { rawValue }
 
-    var title: String {
-        self == .immediately ? "Immediately" : "After \(rawValue) seconds"
-    }
-
     var interval: TimeInterval { TimeInterval(rawValue) }
 }
 
@@ -27,8 +23,6 @@ enum JoinWindow: Int, CaseIterable, Identifiable, Sendable {
     case fifteen = 15
 
     var id: Int { rawValue }
-
-    var title: String { rawValue == 1 ? "1 minute" : "\(rawValue) minutes" }
 }
 
 /// How early the calendar item picks the next event up. Zero, which `integer(forKey:)` also
@@ -41,8 +35,6 @@ enum MenuBarEvents: Int, CaseIterable, Identifiable, Sendable {
     case thirty = 30
 
     var id: Int { rawValue }
-
-    var title: String { self == .today ? "Today" : "\(rawValue) minutes before" }
 }
 
 /// The calendar's independent menu-bar presence. Zero matches an unset preference.
@@ -52,14 +44,6 @@ enum CalendarMenuBarDisplay: Int, CaseIterable, Identifiable, Sendable {
     case meetingTitle = 2
 
     var id: Int { rawValue }
-
-    var title: String {
-        switch self {
-        case .disabled: "Disabled"
-        case .meetingIcon: "Meeting Icon"
-        case .meetingTitle: "Meeting Title"
-        }
-    }
 }
 
 /// How long a started event holds the menu bar. Zero, the default, means it goes as it starts.
@@ -70,17 +54,6 @@ enum CalendarLauncherLimit: Int, CaseIterable, Identifiable, Sendable {
     case all = 0
 
     var id: Int { rawValue }
-
-    var title: String {
-        switch self {
-        case .one: "1 next"
-        case .three: "3 next"
-        case .five: "5 next"
-        case .all: "All"
-        }
-    }
-
-    var maximum: Int? { self == .all ? nil : rawValue }
 }
 
 /// Whether a started event remains in the menu bar long enough to show its time left.
@@ -92,17 +65,6 @@ enum HideCurrentEvent: Int, CaseIterable, Identifiable, Sendable {
     case afterThirty = 30
 
     var id: Int { rawValue }
-
-    var title: String {
-        switch self {
-        case .dontHide: "Keep visible — show time left"
-        case .automatically: "Automatically"
-        default: "After \(rawValue) minutes"
-        }
-    }
-
-    var hidesAtStart: Bool { self == .automatically }
-    var minutes: Int? { rawValue > 0 ? rawValue : nil }
 }
 
 @MainActor

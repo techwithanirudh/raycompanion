@@ -53,21 +53,6 @@ struct KeyShortcut: Hashable, Sendable {
 
     // MARK: - The Hyper chord
 
-    /// ⌃⌥⌘, plus ⇧ when Include Shift is on — the one place the chord is spelled out.
-    static func hyperChord(includesShift: Bool) -> NSEvent.ModifierFlags {
-        includesShift ? [.control, .option, .shift, .command] : [.control, .option, .command]
-    }
-
-    /// Re-points a chord recorded against the other Hyper set. docs/features/hotkeys.md
-    func retargetingHyper(includesShift: Bool) -> KeyShortcut {
-        let stale = Self.hyperChord(includesShift: !includesShift)
-        guard modifierFlags.isSuperset(of: stale) else { return self }
-        let retargeted =
-            modifierFlags.subtracting(stale).union(Self.hyperChord(includesShift: includesShift))
-        return KeyShortcut(
-            carbonKeyCode: carbonKeyCode, carbonModifiers: Self.carbonModifiers(from: retargeted))
-    }
-
     /// `modifierSymbols` with the Hyper chord collapsed to "✦", when one is configured at all.
     static func collapsedModifierSymbols(
         from flags: NSEvent.ModifierFlags, hyperChord: NSEvent.ModifierFlags?
@@ -117,7 +102,6 @@ struct KeyShortcut: Hashable, Sendable {
         kVK_F11: "F11", kVK_F12: "F12", kVK_F13: "F13", kVK_F14: "F14", kVK_F15: "F15",
         kVK_F16: "F16", kVK_F17: "F17", kVK_F18: "F18", kVK_F19: "F19", kVK_F20: "F20"
     ]
-
 }
 
 // Decoding routes through the masking initializer. See docs/features/hotkeys.md#persistence.

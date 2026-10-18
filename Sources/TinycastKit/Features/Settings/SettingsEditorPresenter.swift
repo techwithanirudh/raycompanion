@@ -10,10 +10,6 @@ final class SettingsEditorPresenter: NSObject {
         init(_ action: @escaping () -> Void = {}) {
             self.action = action
         }
-
-        func callAsFunction() {
-            action()
-        }
     }
 
     fileprivate struct BooleanPanelModifier<PanelContent: View>: ViewModifier {

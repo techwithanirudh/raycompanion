@@ -46,21 +46,6 @@ enum FileSearchScope {
             .standardizedFileURL
     }
 
-    static func abbreviate(_ path: String, homeDirectory: URL) -> String {
-        let home = homeDirectory.standardizedFileURL.path
-        if path == home { return "~" }
-        guard path.hasPrefix(home + "/") else { return path }
-        return "~" + path.dropFirst(home.count)
-    }
-
-    /// Abbreviated and deduplicated, keeping the order the user added them in.
-    static func normalize(_ scopes: [String], homeDirectory: URL) -> [String] {
-        var seen = Set<String>()
-        let abbreviated = roots(for: scopes, homeDirectory: homeDirectory)
-            .map { abbreviate($0.path, homeDirectory: homeDirectory) }
-        return abbreviated.filter { seen.insert($0).inserted }
-    }
-
     static func roots(for scopes: [String], homeDirectory: URL) -> [URL] {
         var seen = Set<String>()
         let expanded = scopes.map { expand($0, homeDirectory: homeDirectory) }

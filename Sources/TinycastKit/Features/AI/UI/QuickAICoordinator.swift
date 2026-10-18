@@ -159,8 +159,4 @@ final class QuickAICoordinator {
     func clearAttachments() {
         chat.clearAttachments()
     }
-
-    func removeAttachment(_ id: UUID) {
-        chat.removeAttachment(id)
-    }
 }

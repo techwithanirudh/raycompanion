@@ -164,22 +164,12 @@ final class PaletteState {
     /// Long enough that ⌘↵ or ⌘K never flashes the numbering, short enough to feel like a reveal.
     private static let commandHoldDelay = Duration.milliseconds(400)
 
-    /// U+0001 can't appear in an entry id or an argument name, so the halves stay unambiguous.
-    nonisolated static func argumentKey(_ entryID: String, _ name: String) -> String {
-        entryID + "\u{1}" + name
-    }
-
     func notePinChord() {
         pinChordToken = UUID()
     }
 
     func noteMenuPresentation() {
         menuPresentationToken = UUID()
-    }
-
-    func rewriteQuery(_ text: String) {
-        query = text
-        queryRewriteToken = UUID()
     }
 
     func noteFavoriteSlot(_ index: Int) {

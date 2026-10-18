@@ -62,36 +62,3 @@ enum SettingsTab: CaseIterable, Identifiable {
     }
 }
 
-/// Declaration order is display order; not `.Section`, which would shadow SwiftUI's `Section`.
-enum SettingsSection: CaseIterable, Identifiable {
-    case general, launcher, features, advanced
-    /// See `SettingsTab.id`: distinct types keep the two namespaces from colliding.
-    var id: Self { self }
-
-    var title: String {
-        switch self {
-        case .general: return "General"
-        case .launcher: return "Launcher"
-        case .features: return "Features"
-        case .advanced: return "Advanced"
-        }
-    }
-
-    var tabs: [SettingsTab] {
-        switch self {
-        case .general: return [.general, .permissions]
-        case .launcher:
-            return [
-                .applications, .systemSettings, .systemActions, .commands, .quicklinks,
-                .appleShortcuts, .fallbacks
-            ]
-        case .features:
-            // Everyday tools first; AI and extensions are opt-in extras.
-            return [
-                .clipboard, .snippets, .fileSearch, .windowManagement, .navigation, .notes,
-                .calendar, .emoji, .dictation, .ai, .quickActions, .extensions
-            ]
-        case .advanced: return [.backup, .about]
-        }
-    }
-}

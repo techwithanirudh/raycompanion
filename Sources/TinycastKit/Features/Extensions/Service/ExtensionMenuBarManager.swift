@@ -25,8 +25,6 @@ final class ExtensionMenuBarManager: ExtensionRuntimeDelegate {
         var enableInteraction: () -> Void = {}
     }
 
-    var isRunning: Bool { active != nil }
-
     private struct Request {
         let reference: ExtensionCommandRef
         var type: ExtensionLaunchType = .background
@@ -75,21 +73,6 @@ final class ExtensionMenuBarManager: ExtensionRuntimeDelegate {
         self.onError = onError
     }
 
-    func synchronize(_ installed: [InstalledExtension]) {
-        self.installed = installed
-        for reference in menuBarReferences() {
-            guard let (owner, command) = resolve(reference), command.mode == .menuBar
-            else {
-                disable(reference.entryID)
-                continue
-            }
-            if let snapshot = metadata(reference).menuBarSnapshot {
-                controller(for: reference, owner: owner).update(snapshot)
-            }
-        }
-        scheduleRefresh()
-    }
-
     func run(
         _ owner: InstalledExtension, command: ExtensionCommand, arguments: [String: String] = [:],
         type: ExtensionLaunchType = .userInitiated, context: [String: RenderValue] = [:]
@@ -101,38 +84,6 @@ final class ExtensionMenuBarManager: ExtensionRuntimeDelegate {
                 command: reference.commandName)
         }
         enqueue(Request(reference: reference, type: type, arguments: arguments, context: context))
-    }
-
-    func disable(_ entryID: String) {
-        requests.removeAll { $0.reference.entryID == entryID }
-        controllers.removeValue(forKey: entryID)?.remove()
-        if let reference = ExtensionCommandRef(entryID: entryID) {
-            commandMetadata.setMenuBarEnabled(
-                false, extension: reference.extensionName,
-                command: reference.commandName)
-        }
-        if active?.request.reference.entryID == entryID { finish() }
-        runNext()
-        scheduleRefresh()
-    }
-
-    func remove(extensionName: String) {
-        requests.removeAll { $0.reference.extensionName == extensionName }
-        if active?.owner.manifest.name == extensionName { finish() }
-        for reference in menuBarReferences() where reference.extensionName == extensionName {
-            disable(reference.entryID)
-        }
-        runNext()
-    }
-
-    func stop() {
-        refreshTask?.cancel()
-        refreshTask = nil
-        requests.removeAll()
-        finish()
-        for controller in controllers.values { controller.remove() }
-        controllers.removeAll()
-        installed = []
     }
 
     private func resolve(_ reference: ExtensionCommandRef) -> (InstalledExtension, ExtensionCommand)? {

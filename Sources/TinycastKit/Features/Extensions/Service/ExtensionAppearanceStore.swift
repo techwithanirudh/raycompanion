@@ -22,19 +22,4 @@ final class ExtensionAppearanceStore {
     func appearance(for extensionName: String) -> ExtensionAppearance? {
         overrides[extensionName]
     }
-
-    /// `nil` restores the extension's own icon.
-    func set(_ appearance: ExtensionAppearance?, for extensionName: String) {
-        if let appearance {
-            overrides[extensionName] = appearance
-        } else {
-            overrides.removeValue(forKey: extensionName)
-        }
-        persist()
-    }
-
-    private func persist() {
-        guard let data = try? JSONEncoder().encode(overrides) else { return }
-        defaults.set(data, forKey: key)
-    }
 }

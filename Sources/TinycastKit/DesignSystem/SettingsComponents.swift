@@ -108,70 +108,7 @@ extension SettingsRow where Icon == EmptyView {
     }
 }
 
-struct SettingsScopeRow: View {
-    let scope: String
-    let path: String
-    let isMissing: Bool
-    let onRemove: () -> Void
-
-    private var isFolder: Bool { (path as NSString).pathExtension != "app" }
-
-    var body: some View {
-        LabeledContent {
-            HStack(spacing: Theme.Spacing.sm) {
-                if isMissing {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
-                        .help("This location no longer exists.")
-                }
-                Button(action: onRemove) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.tertiary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Remove \(scope)")
-            }
-        } label: {
-            HStack {
-                Image(nsImage: IconCache.icon(forFile: path))
-                    .resizable()
-                    .renderingMode(.original)
-                    .interpolation(.high)
-                    .id(IconCache.style.generation)
-                    .frame(
-                        width: SettingsListMetrics.iconSize
-                            - (isFolder ? Theme.Spacing.xxs + 1 : 0),
-                        height: SettingsListMetrics.iconSize - (isFolder ? 1 : 0)
-                    )
-                    .frame(
-                        width: SettingsListMetrics.iconSize,
-                        height: SettingsListMetrics.iconSize
-                    )
-                    .accessibilityHidden(true)
-                Text(scope)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .foregroundStyle(isMissing ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.primary))
-            }
-        }
-    }
-}
-
 extension View {
-    func settingsOptionSegment(isSelected: Bool) -> some View {
-        let shape = RoundedRectangle(cornerRadius: Theme.Radius.barControl, style: .continuous)
-        return
-            self
-            .frame(
-                width: Theme.Size.settingsControlHeight,
-                height: Theme.Size.settingsControlHeight
-            )
-            .contentShape(shape)
-            .background {
-                shape.fill(isSelected ? Theme.Colors.controlSurface : Color.clear)
-            }
-    }
-
     /// Dims as well as disables; `.disabled` alone leaves the title at full strength.
     func settingsEnabled(_ isEnabled: Bool) -> some View {
         disabled(!isEnabled).opacity(isEnabled ? 1 : 0.45)
@@ -189,8 +126,6 @@ extension View {
     func settingsEditorPanelSurface(controlsOnGlass: Bool = true) -> some View {
         modifier(SettingsEditorPanelSurface(controlsOnGlass: controlsOnGlass))
     }
-
-
 }
 
 struct SettingsEditorHeader: View {
@@ -279,44 +214,6 @@ private struct SettingsEditorPanelSurface: ViewModifier {
             draggable.background {
                 shape.fill(Theme.Colors.panelScrim).glassEffect(.regular, in: shape)
             }
-        }
-    }
-}
-
-/// A feature pane's opening section: the master switch, then its launcher-visibility companion.
-struct FeatureSwitchSection: View {
-    let anchor: SettingsAnchor
-    let enableTitle: String
-    var enableSubtitle: String?
-    @Binding var isEnabled: Bool
-    @Binding var showsInLauncher: Bool
-    var showsIcon = false
-    var showsHeader = true
-
-    var body: some View {
-        if showsHeader {
-            section
-        } else {
-            section.settingsAnchor(anchor)
-        }
-    }
-
-    private var section: some View {
-        Section {
-            Toggle(isOn: $isEnabled) {
-                if showsIcon, let enableSubtitle {
-                    SettingsFeatureToggleLabel(
-                        anchor: anchor, title: enableTitle, subtitle: enableSubtitle)
-                } else {
-                    SettingsRowTitle(anchor, enableTitle)
-                    if let enableSubtitle { Text(enableSubtitle) }
-                }
-            }
-            Toggle("Show in launcher", isOn: $showsInLauncher)
-                // The switch above stays live so the feature can always be turned back on.
-                .settingsEnabled(isEnabled)
-        } header: {
-            if showsHeader { SettingsSectionHeader(anchor) }
         }
     }
 }

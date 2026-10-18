@@ -25,10 +25,8 @@ struct InterfaceMetrics: Equatable, Sendable {
         var xl: CGFloat { scaledPoints(Theme.Spacing.xl, scale) }
         var dialogInset: CGFloat { scaledPoints(Theme.Spacing.dialogInset, scale) }
         var xxl: CGFloat { scaledPoints(Theme.Spacing.xxl, scale) }
-        var xxxl: CGFloat { scaledPoints(Theme.Spacing.xxxl, scale) }
         var sectionHeaderBottom: CGFloat { scaledPoints(Theme.Spacing.sectionHeaderBottom, scale) }
         var sectionSpacing: CGFloat { scaledPoints(Theme.Spacing.sectionSpacing, scale) }
-        var emojiSectionSpacing: CGFloat { scaledPoints(Theme.Spacing.emojiSectionSpacing, scale) }
         var chatTranscriptBottom: CGFloat { scaledPoints(Theme.Spacing.chatTranscriptBottom, scale) }
         var chatFollowTailSlack: CGFloat { scaledPoints(Theme.Spacing.chatFollowTailSlack, scale) }
         var chatLine: CGFloat { scaledPoints(Theme.Spacing.chatLine, scale) }
@@ -39,17 +37,13 @@ struct InterfaceMetrics: Equatable, Sendable {
 
         var panel: CGFloat { scaledPoints(Theme.Radius.panel, scale) }
         var row: CGFloat { scaledPoints(Theme.Radius.row, scale) }
-        var emojiCell: CGFloat { scaledPoints(Theme.Radius.emojiCell, scale) }
         var menu: CGFloat { scaledPoints(Theme.Radius.menu, scale) }
         var menuRow: CGFloat { scaledPoints(Theme.Radius.menuRow, scale) }
         var barControl: CGFloat { scaledPoints(Theme.Radius.barControl, scale) }
         var menuPanel: CGFloat { scaledPoints(Theme.Radius.menuPanel, scale) }
         var dialogSymbol: CGFloat { scaledPoints(Theme.Radius.dialogSymbol, scale) }
-        var dialog: CGFloat { scaledPoints(Theme.Radius.dialog, scale) }
         var thumbnail: CGFloat { scaledPoints(Theme.Radius.thumbnail, scale) }
-        var glyph: CGFloat { scaledPoints(Theme.Radius.glyph, scale) }
         var attachmentChip: CGFloat { scaledPoints(Theme.Radius.attachmentChip, scale) }
-        var card: CGFloat { scaledPoints(Theme.Radius.card, scale) }
         var keyCap: CGFloat { scaledPoints(Theme.Radius.keyCap, scale) }
         var tooltip: CGFloat { scaledPoints(Theme.Radius.tooltip, scale) }
     }
@@ -69,20 +63,15 @@ struct InterfaceMetrics: Equatable, Sendable {
         var barButtonHeight: CGFloat { scaledPoints(Theme.Size.barButtonHeight, scale) }
         var rowIcon: CGFloat { scaledPoints(Theme.Size.rowIcon, scale) }
         var resultRowIcon: CGFloat { scaledPoints(Theme.Size.resultRowIcon, scale) }
-        var colorDot: CGFloat { scaledPoints(Theme.Size.colorDot, scale) }
-        var calendarBarWidth: CGFloat { scaledPoints(Theme.Size.calendarBarWidth, scale) }
-        var calendarBarHeight: CGFloat { scaledPoints(Theme.Size.calendarBarHeight, scale) }
         var keyCap: CGFloat { scaledPoints(Theme.Size.keyCap, scale) }
         var compactKeyCap: CGFloat { scaledPoints(Theme.Size.compactKeyCap, scale) }
         var heroKeyCap: CGFloat { scaledPoints(Theme.Size.heroKeyCap, scale) }
         var menuButton: CGFloat { scaledPoints(Theme.Size.menuButton, scale) }
-        var checkbox: CGFloat { scaledPoints(Theme.Size.checkbox, scale) }
 
         var menuWidth: CGFloat { scaledPoints(Theme.Size.menuWidth, scale) }
         var actionMenuWidth: CGFloat { scaledPoints(Theme.Size.actionMenuWidth, scale) }
         var clipboardFilterMenuWidth: CGFloat { scaledPoints(Theme.Size.clipboardFilterMenuWidth, scale) }
         var fileSearchFilterMenuWidth: CGFloat { scaledPoints(Theme.Size.fileSearchFilterMenuWidth, scale) }
-        var emojiCategoryMenuWidth: CGFloat { scaledPoints(Theme.Size.emojiCategoryMenuWidth, scale) }
         var menuIcon: CGFloat { scaledPoints(Theme.Size.menuIcon, scale) }
         var menuBrandIcon: CGFloat { scaledPoints(Theme.Size.menuBrandIcon, scale) }
         var barBrandIcon: CGFloat { scaledPoints(Theme.Size.barBrandIcon, scale) }
@@ -94,12 +83,7 @@ struct InterfaceMetrics: Equatable, Sendable {
             (Theme.Size.menuVisibleRows * (menuRowHeight + menuRowSpacing)).rounded()
         }
         var clipboardListWidth: CGFloat { scaledPoints(Theme.Size.clipboardListWidth, scale) }
-        var clipboardMediaHeight: CGFloat { scaledPoints(Theme.Size.clipboardMediaHeight, scale) }
-        var clipboardPreviewPixel: CGFloat { scaledPoints(Theme.Size.clipboardPreviewPixel, scale) }
-        var emojiGridInset: CGFloat { scaledPoints(Theme.Size.emojiGridInset, scale) }
-        var emojiCell: CGFloat { scaledPoints(Theme.Size.emojiCell, scale) }
 
-        var markdownListMarker: CGFloat { scaledPoints(Theme.Size.markdownListMarker, scale) }
         var markdownQuoteBar: CGFloat { scaledPoints(Theme.Size.markdownQuoteBar, scale) }
         var chatMessageAction: CGFloat { scaledPoints(Theme.Size.chatMessageAction, scale) }
         var chatImageThumb: CGFloat { scaledPoints(Theme.Size.chatImageThumb, scale) }
@@ -108,14 +92,7 @@ struct InterfaceMetrics: Equatable, Sendable {
         var chatAttachmentRemove: CGFloat { scaledPoints(Theme.Size.chatAttachmentRemove, scale) }
         var chatAttachmentInset: CGFloat { scaledPoints(Theme.Size.chatAttachmentInset, scale) }
 
-        var quickActionPanel: CGFloat { scaledPoints(Theme.Size.quickActionPanel, scale) }
-        var quickActionHeaderIcon: CGFloat { scaledPoints(Theme.Size.quickActionHeaderIcon, scale) }
-        var quickActionScrollFade: CGFloat { scaledPoints(Theme.Size.quickActionScrollFade, scale) }
-        var quickActionPanelBody: CGFloat { scaledPoints(Theme.Size.quickActionPanelBody, scale) }
-        var quickActionPanelMinBody: CGFloat { scaledPoints(Theme.Size.quickActionPanelMinBody, scale) }
-
         var dialogCompactWidth: CGFloat { scaledPoints(Theme.Size.dialogCompactWidth, scale) }
-        var dialogWidth: CGFloat { scaledPoints(Theme.Size.dialogWidth, scale) }
         var dialogButtonHeight: CGFloat {
             menuButton
                 - scaledPoints(Theme.Size.menuButton - Theme.Size.dialogButtonHeight, scale)
@@ -124,12 +101,7 @@ struct InterfaceMetrics: Equatable, Sendable {
         var dialogSymbolContainer: CGFloat {
             scaledPoints(Theme.Size.dialogSymbolContainer, scale)
         }
-        var dialogIcon: CGFloat { scaledPoints(Theme.Size.dialogIcon, scale) }
         var hudMaxWidth: CGFloat { scaledPoints(Theme.Size.hudMaxWidth, scale) }
-        var hudWidth: CGFloat { scaledPoints(Theme.Size.hudWidth, scale) }
-        var hudHeight: CGFloat { scaledPoints(Theme.Size.hudHeight, scale) }
-        var volumeTrackHeight: CGFloat { scaledPoints(Theme.Size.volumeTrackHeight, scale) }
-        var volumeReadout: CGFloat { scaledPoints(Theme.Size.volumeReadout, scale) }
     }
 
     /// `NSFont` is the only public source of a text style's size and face.
@@ -158,19 +130,9 @@ struct InterfaceMetrics: Equatable, Sendable {
         var rowTrailing: Font { font(Theme.Typography.rowTrailing, .callout) }
         var sectionHeader: Font { font(Theme.Typography.sectionHeader, .subheadline, .medium) }
         var panelTitle: Font { font(Theme.Typography.panelTitle, .headline) }
-        var calcResult: Font { font(Theme.Typography.calcResult, .title1) }
         var keyCap: Font { font(Theme.Typography.keyCap, .caption1) }
         var compactKeyCap: Font { font(Theme.Typography.compactKeyCap, .caption2) }
         var heroKeyCap: Font { font(Theme.Typography.heroKeyCap, .body) }
-        var markdownHeading1: Font { font(Theme.Typography.markdownHeading1, .title2, .semibold) }
-        var markdownHeading2: Font { font(Theme.Typography.markdownHeading2, .title3, .semibold) }
-        var markdownHeading3: Font { font(Theme.Typography.markdownHeading3, .headline) }
-        var code: Font {
-            scale == 1
-                ? Theme.Typography.code
-                : .system(size: nsFont(.callout).pointSize, design: .monospaced)
-        }
-        var inlineCode: Font { font(Theme.Typography.inlineCode, .body).monospaced() }
         var bar: Font { font(Theme.Typography.bar, .callout, .medium) }
         var chip: Font { font(Theme.Typography.chip, .callout) }
         @MainActor var chipNSFont: NSFont { scale == 1 ? Theme.Typography.chipNSFont : nsFont(.callout) }

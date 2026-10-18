@@ -152,27 +152,6 @@ enum IconCache {
         style.bump()
     }
 
-    /// macOS restyles `NSWorkspace`'s images in place, so these bytes are the only proof it landed.
-    static func styleFingerprint() -> Data? {
-        let side = 32
-        guard
-            let rep = NSBitmapImageRep(
-                bitmapDataPlanes: nil, pixelsWide: side, pixelsHigh: side, bitsPerSample: 8,
-                samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
-                bytesPerRow: 0, bitsPerPixel: 0),
-            let ctx = NSGraphicsContext(bitmapImageRep: rep)
-        else { return nil }
-        NSGraphicsContext.saveGraphicsState()
-        NSGraphicsContext.current = ctx
-        NSWorkspace.shared.icon(forFile: styleProbePath)
-            .draw(in: NSRect(x: 0, y: 0, width: side, height: side))
-        NSGraphicsContext.restoreGraphicsState()
-        guard let bytes = rep.bitmapData else { return nil }
-        return Data(bytes: bytes, count: rep.bytesPerRow * rep.pixelsHigh)
-    }
-
-    private static let styleProbePath = "/System/Library/CoreServices/Finder.app"
-
     /// In every key, so an in-flight decode writes somewhere unreachable instead of repopulating.
     private static func key(_ body: String) -> NSString {
         "\(styleGeneration.withLock { $0 }):\(body)" as NSString
@@ -362,17 +341,6 @@ enum IconCache {
     }
 
     // MARK: - Drawing an `EntryIcon`
-
-    /// One switch, so a row never has to know which of these paths its entry wants.
-    static func icon(for source: EntryIcon, fileURL: URL) -> NSImage {
-        switch source {
-        case .file(let stamp): return icon(forFile: fileURL.path, stamp: stamp)
-        case .symbol(let name): return symbolIcon(named: name)
-        case .tintedSymbol(let name, let tint): return symbolIcon(named: name, tint: tint)
-        case .artwork(let path, let extent): return artwork(atPath: path, extent: extent)
-        case .contentType(let identifier): return contentTypeIcon(identifier)
-        }
-    }
 
     static func cached(_ source: EntryIcon, fileURL: URL, size: IconSize? = nil) -> NSImage? {
         switch source {

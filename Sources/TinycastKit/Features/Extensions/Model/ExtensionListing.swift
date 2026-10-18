@@ -16,20 +16,4 @@ struct ExtensionListing: Identifiable, Hashable, Sendable {
     let downloadURL: URL
     /// What an update check compares: it moves with every version the store publishes.
     let commitSHA: String?
-
-    /// Either side stands in for a missing other, so a one-artwork listing still draws.
-    func iconURL(isDark: Bool) -> URL? {
-        isDark ? (darkIconURL ?? lightIconURL) : (lightIconURL ?? darkIconURL)
-    }
-
-    /// 124218 → "124k". Exact counts past a thousand are noise in a row.
-    static func abbreviate(_ count: Int) -> String {
-        switch count {
-        case ..<1_000: return "\(count)"
-        case ..<1_000_000: return "\(count / 1_000)k"
-        default:
-            let millions = Double(count) / 1_000_000
-            return String(format: millions < 10 ? "%.1fM" : "%.0fM", millions)
-        }
-    }
 }

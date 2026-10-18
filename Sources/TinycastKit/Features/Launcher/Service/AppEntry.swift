@@ -138,35 +138,6 @@ struct AppEntry: Identifiable, Hashable, Sendable {
     /// The searchable form of every field above, built at publish by `buildSearchProfile`.
     var search = SearchProfile.unnamed
 
-    /// Stable identity for learned ranking, favorites, and other per-entry preferences.
-    var preferenceKey: String { bundleID ?? id }
-
-    /// What this entry is called, in the shape `EntryNaming` reads.
-    var naming: EntryNaming.Sources {
-        var sources = EntryNaming.Sources(name: name)
-        sources.alternateTitles = alternateTitles
-        // The subtitle a row prints wins; the owner it replaced still finds the entry.
-        sources.subtitle = subtitle ?? ownerName
-        sources.keywords = keywords + (subtitle == nil ? [] : [ownerName].compactMap { $0 })
-        return sources
-    }
-
-    /// Built once per entry change, never per keystroke.
-    mutating func buildSearchProfile() { search = EntryNaming.profile(for: naming) }
-
-    /// Only a name the entry lacks adds anything; a bundle usually spells itself the same twice.
-    mutating func addAlternateTitle(_ candidate: String) {
-        let existing = [name] + alternateTitles
-        guard !candidate.isEmpty,
-            !existing.contains(where: {
-                FuzzyMatch.normalized($0) == FuzzyMatch.normalized(candidate)
-            })
-        else { return }
-        alternateTitles.append(candidate)
-    }
-
-    var kindLabel: String { ownerName ?? kind.descriptor.label }
-
     /// The hotkey action for this entry, or nil when the entry has no addressable action.
     var hotKeyAction: HotKeyAction? {
         switch kind {
@@ -181,13 +152,6 @@ struct AppEntry: Identifiable, Hashable, Sendable {
             return nil
         }
     }
-
-    /// Synthetic entries have no file to reveal; a destination is its record's own action.
-    var canRevealInFinder: Bool { kind.descriptor.canRevealInFinder }
-
-    var canHideFromSearch: Bool { kind.descriptor.canHideFromSearch }
-
-    var canDragOut: Bool { kind.descriptor.canDragOut }
 
     /// What this row draws, and the only thing any icon path needs to ask.
     var iconSource: EntryIcon { iconOverride ?? defaultIcon }
@@ -204,12 +168,6 @@ struct AppEntry: Identifiable, Hashable, Sendable {
         case .meeting: return "video.fill"
         default: return "questionmark"
         }
-    }
-
-    /// Main-actor because it subscribes the calling view; every caller is a `body`.
-    @MainActor var icon: NSImage {
-        IconCache.observeStyle()
-        return IconCache.icon(for: iconSource, fileURL: url)
     }
 
     /// Icon identity for a row's async load: re-skinning changes the glyph while `id` stays put.

@@ -9,12 +9,6 @@ enum PopoverMenuIcon: Equatable {
     case thumbnail(id: UUID, data: Data)
     /// No glyph and no slot: a run of rows under one repeated icon says more without it.
     case blank
-
-    /// A paste row's glyph: the target app's icon when known, else a generic symbol.
-    static func paste(_ target: PasteTarget?, fallback: String) -> PopoverMenuIcon {
-        guard let path = target?.iconPath else { return .symbol(fallback) }
-        return .file(path: path)
-    }
 }
 
 /// One menu row; both the render path and the key handlers address rows through these.

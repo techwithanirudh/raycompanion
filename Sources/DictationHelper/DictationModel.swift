@@ -9,9 +9,6 @@ enum DictationModel: String, CaseIterable, Identifiable, Codable, Sendable {
     enum Family: String, CaseIterable, Identifiable {
         case parakeet = "Parakeet", qwen = "Qwen"
         var id: Self { self }
-        var summary: String {
-            self == .parakeet ? "Fast and memory-efficient" : "More languages, but slower"
-        }
     }
     case redux
     case ultra

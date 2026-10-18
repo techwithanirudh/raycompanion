@@ -45,23 +45,3 @@ extension NSWindow {
     }
 }
 
-extension View {
-    /// Scales up as the window fades in, inside the measured frame, so nothing clips.
-    func panelEntrance() -> some View {
-        modifier(PanelEntrance())
-    }
-}
-
-private struct PanelEntrance: ViewModifier {
-    @State private var appeared = false
-
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(appeared ? 1 : Self.entryScale)
-            .onAppear {
-                withAnimation(.easeOut(duration: Theme.Duration.enter)) { appeared = true }
-            }
-    }
-
-    private static let entryScale: CGFloat = 0.94
-}

@@ -60,11 +60,6 @@ struct ChatMessage: Identifiable, Equatable, Sendable {
     /// The next search or call's place among the reply's: with no text between, offsets tie.
     var nextSequence: Int { searches.count + toolUses.count }
 
-    /// Every block joined, for find and for a transcript copied out whole.
-    var reasoningText: String {
-        reasoning.map(\.text).joined(separator: "\n\n")
-    }
-
     /// The reply split around what it did: thinking, search or tool, text… each where it happened.
     var segments: [ChatSegment] {
         // At one offset, thinking came first: a model thinks, then searches or calls.

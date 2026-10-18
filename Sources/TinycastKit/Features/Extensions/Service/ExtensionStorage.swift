@@ -144,16 +144,6 @@ final class ExtensionStorage {
         store(for: name).preferences[key]?.preferenceValue
     }
 
-    func setPreference(extension name: String, key: String, value: ExtensionPreferenceValue?) {
-        mutate(name) { store in
-            if let value {
-                store.preferences[key] = StoredValue(preference: value)
-            } else {
-                store.preferences.removeValue(forKey: key)
-            }
-        }
-    }
-
     /// Manifest defaults overlaid with the user's — what `getPreferenceValues()` sees.
     func resolvedPreferences(
         extension name: String, schemas: [ExtensionPreferenceSchema]
@@ -175,11 +165,6 @@ final class ExtensionStorage {
             if case .string(let text) = value { return text.isEmpty }
             return false
         }
-    }
-
-    func removeAll(extension name: String) {
-        stores.removeValue(forKey: name)
-        try? FileManager.default.removeItem(at: fileURL(for: name))
     }
 
     // MARK: - Persistence

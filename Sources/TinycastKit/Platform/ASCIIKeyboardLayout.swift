@@ -8,15 +8,6 @@ enum ASCIIKeyboardLayout {
         withCurrentLayout { character(for: keyCode, modifiers: modifiers, in: $0) }
     }
 
-    /// Every key's base character, translated against one lookup of the layout.
-    @MainActor static func baseCharacters(for keyCodes: Range<Int>) -> [Int: String] {
-        withCurrentLayout { layout in
-            keyCodes.reduce(into: [:]) { characters, keyCode in
-                characters[keyCode] = character(for: keyCode, modifiers: 0, in: layout)
-            }
-        } ?? [:]
-    }
-
     @MainActor private static func withCurrentLayout<Result>(
         _ body: (UnsafePointer<UCKeyboardLayout>) -> Result?
     ) -> Result? {

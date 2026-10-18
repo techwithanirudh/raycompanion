@@ -12,17 +12,6 @@ enum HyperKeyPhysicalKey: String, CaseIterable, Identifiable, Sendable {
     /// The single glyph Hyper shortcuts collapse to.
     static let hyperGlyph = "✦"
 
-    var title: String {
-        switch self {
-        case .none: return "None"
-        case .capsLock: return "Caps Lock (⇪)"
-        case .rightControl: return "Right Control (⌃)"
-        case .rightShift: return "Right Shift (⇧)"
-        case .rightOption: return "Right Option (⌥)"
-        case .rightCommand: return "Right Command (⌘)"
-        }
-    }
-
     /// Virtual key code of the physical key, `nil` only for `.none`.
     var keyCode: Int? {
         switch self {
@@ -43,9 +32,6 @@ enum HyperKeyPhysicalKey: String, CaseIterable, Identifiable, Sendable {
     /// Whether presses arrive as keyDown/keyUp (Caps Lock via F18) or as `flagsChanged`.
     var tapUsesKeyEvents: Bool { self == .capsLock }
 
-    /// Keys that do something on their own when not remapped — these get the Quick Press row.
-    var hasOriginalFunction: Bool { self == .capsLock }
-
     /// The generic flag this key contributes, so the tap can strip it when outside the set.
     var ownFlag: CGEventFlags? {
         switch self {
@@ -56,11 +42,6 @@ enum HyperKeyPhysicalKey: String, CaseIterable, Identifiable, Sendable {
         case .rightOption: return .maskAlternate
         case .rightCommand: return .maskCommand
         }
-    }
-
-    /// Quick Press label for triggering the key's original function.
-    var quickPressOriginalTitle: String? {
-        self == .capsLock ? "Trigger Caps Lock (⇪)" : nil
     }
 }
 

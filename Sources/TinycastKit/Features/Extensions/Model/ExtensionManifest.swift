@@ -207,40 +207,6 @@ struct ExtensionManifest: Sendable, Hashable {
     let commands: [ExtensionCommand]
     let preferences: [ExtensionPreferenceSchema]
 
-    /// The handle the store lists it under: its organisation's when it has one.
-    var storeHandle: String { owner ?? author }
-
-    /// `platforms` is absent on older manifests, which predate Windows support and are macOS-only.
-    var supportsMacOS: Bool {
-        guard let platforms else { return true }
-        return platforms.contains { $0.caseInsensitiveCompare("macOS") == .orderedSame }
-    }
-
-    enum ParseError: LocalizedError {
-        case unreadable(URL)
-        case notAnExtension(URL)
-
-        var errorDescription: String? {
-            switch self {
-            case .unreadable(let url):
-                return "Couldn't read \(url.lastPathComponent)."
-            case .notAnExtension(let url):
-                return "\(url.lastPathComponent) doesn't contain a Raycast extension manifest."
-            }
-        }
-    }
-
-    static func load(directory: URL) throws -> ExtensionManifest {
-        let manifestURL = directory.appendingPathComponent("package.json")
-        guard let data = try? Data(contentsOf: manifestURL) else {
-            throw ParseError.unreadable(manifestURL)
-        }
-        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-            let manifest = ExtensionManifest(json: json)
-        else { throw ParseError.notAnExtension(directory) }
-        return manifest
-    }
-
     init?(json: [String: Any]) {
         guard let name = json["name"] as? String else { return nil }
         let commands = (json["commands"] as? [Any] ?? []).compactMap(ExtensionCommand.init(json:))

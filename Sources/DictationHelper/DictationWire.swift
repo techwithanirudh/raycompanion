@@ -1,17 +1,6 @@
 import Foundation
 
 nonisolated enum DictationWire {
-    enum Failure: LocalizedError {
-        case notInstalled, busy, unavailable
-        var errorDescription: String? {
-            switch self {
-            case .notInstalled: "Download the selected dictation model first."
-            case .busy: "Wait for the current dictation to finish."
-            case .unavailable: "The dictation model couldn't process the recording."
-            }
-        }
-    }
-
     static let sampleRate = 16_000
     static let maximumSamples = sampleRate * 60 * 5
     static let maximumMessageBytes = 64_000

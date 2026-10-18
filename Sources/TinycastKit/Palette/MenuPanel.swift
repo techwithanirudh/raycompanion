@@ -49,7 +49,6 @@ final class MenuPanel: NSPanel {
             onResignKey?(parent?.isKeyWindow == true)
         }
     }
-
 }
 
 /// Presents one menu at a time in a `MenuPanel` hung off a corner of the palette.
@@ -71,7 +70,6 @@ final class MenuPanelController {
     private var motion: MenuPanelMotion?
     private var transition: UInt64 = 0
 
-    var isOpen: Bool { panel?.isVisible ?? false }
     private(set) var isClosing = false
 
     func show(

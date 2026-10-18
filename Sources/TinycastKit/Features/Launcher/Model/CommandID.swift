@@ -143,27 +143,6 @@ enum CommandID: String, CaseIterable, Sendable {
         }
     }
 
-    /// Queries this command wins until the user opens a rival more.
-    var boostedTerms: Set<String> {
-        switch self {
-        case .quickAI: ["ai"]
-        case .aiChat: ["chat"]
-        default: []
-        }
-    }
-
-    /// Suggested, highest first, until the user's own habits fill the section.
-    var suggestionPriority: Int? {
-        switch self {
-        case .clipboardHistory: 80
-        case .searchFiles: 70
-        case .mySchedule: 60
-        case .searchEmoji: 50
-        case .createQuicklink, .createSnippet: 30
-        default: nil
-        }
-    }
-
     /// Query-driven: the typed text is their input, so they are built where offered, never listed.
     var isQueryDriven: Bool {
         self == .openInBrowser || self == .runShellCommand

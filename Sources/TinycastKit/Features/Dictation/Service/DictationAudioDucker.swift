@@ -82,10 +82,6 @@ final class DictationAudioDucker {
         recover()
     }
 
-    func waitForTransition() async {
-        while let transition { await transition.value }
-    }
-
     private func schedule(_ operation: @escaping @MainActor (DictationAudioDucker) async throws -> Void) {
         let previous = transition
         previous?.cancel()
