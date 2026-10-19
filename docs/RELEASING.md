@@ -14,7 +14,21 @@ Sparkle 2.10.0 downloads the archive, verifies its Ed25519 signature before extr
 2. Update `Resources/ReleaseNotes.md` and `Resources/ReleaseNotes.html`.
 3. Run `./scripts/release.sh`. It runs the checks, builds the app in release mode, verifies code signing, archives with `ditto`, and generates and verifies the signed appcast.
 4. Verify the resulting build on the desktop and commit the source when ready.
-5. Run `./scripts/release.sh --publish` to publish the archive and appcast together. The script requires a clean working tree.
+5. Run `./scripts/release.sh --publish` to publish the disk image, archive and appcast together. The script requires a clean working tree whose HEAD is pushed.
+
+Each release carries a signed `RayCompanion.dmg` for first installs, the `RayCompanion.zip` Sparkle installs, and `appcast.xml`. The DMG is built after the appcast, so the feed lists only the zip.
+
+## Release from CI
+
+`.github/workflows/release.yml` runs the same `release.sh --publish` on a GitHub runner, then attaches keyless sigstore bundles (`*.sigstore.json`) for the DMG and zip. Start it from the Actions tab with an existing tag that matches `CFBundleShortVersionString`, such as `v0.2.0`. It needs three repository secrets:
+
+| Secret | Value |
+| --- | --- |
+| `CODESIGN_CERTIFICATE` | Base64 of the `Remotely Self Signed` identity exported from Keychain Access as a `.p12` |
+| `CODESIGN_CERTIFICATE_PASSWORD` | The password chosen for that `.p12` |
+| `SPARKLE_PRIVATE_KEY` | The output of `generate_keys --account com.anirudh.raycompanion.updates -x <file>` |
+
+Set them with `gh secret set <NAME> -R techwithanirudh/raycompanion < <file>`, then delete the exported files. Remotely uses the same certificate, but GitHub cannot copy a secret between repositories.
 
 Every release contains its complete feed at the same stable `latest/download` address. Archive URLs point to the versioned release. Do not delete published releases that existing feeds reference.
 
