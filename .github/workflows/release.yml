@@ -19,6 +19,7 @@ permissions:
 jobs:
   release:
     runs-on: macos-26
+    timeout-minutes: 45
     permissions:
       contents: write
       id-token: write
@@ -63,9 +64,9 @@ jobs:
           rm -f "$certificate"
           swift package resolve
           key_file="$RUNNER_TEMP/sparkle_ed_key"
-          printf '%s' "$SPARKLE_PRIVATE_KEY" > "$key_file"
+          (umask 077 && printf '%s' "$SPARKLE_PRIVATE_KEY" > "$key_file")
           .build/artifacts/sparkle/Sparkle/bin/generate_keys --account com.anirudh.raycompanion.updates -f "$key_file"
-          rm -f "$key_file"
+          echo "SPARKLE_KEY_FILE=$key_file" >> "$GITHUB_ENV"
 
       - name: Build, sign and publish
         env:
@@ -89,6 +90,8 @@ jobs:
           gh release upload "$TAG" RayCompanion.dmg.sigstore.json RayCompanion.zip.sigstore.json \
             --repo "$GITHUB_REPOSITORY"
 
-      - name: Delete the keychain
+      - name: Delete the keychain and key file
         if: always()
-        run: security delete-keychain "$RUNNER_TEMP/buildagent.keychain" || true
+        run: |
+          security delete-keychain "$RUNNER_TEMP/buildagent.keychain" || true
+          rm -f "$RUNNER_TEMP/sparkle_ed_key"

@@ -9,6 +9,10 @@ fi
 account=com.anirudh.raycompanion.updates
 identity=${CODESIGN_IDENTITY:-Remotely Self Signed}
 sparkle_dir="$repo_dir/.build/artifacts/sparkle/Sparkle/bin"
+# CI passes the key as a file: a Keychain item imported by generate_keys raises an access prompt
+# for generate_appcast and sign_update that nobody can answer on a runner.
+sparkle_key=(--account "$account")
+[[ -z ${SPARKLE_KEY_FILE:-} ]] || sparkle_key=(--ed-key-file "$SPARKLE_KEY_FILE")
 if [[ ${1:-} == --publish ]]; then
     [[ -z $(git status --porcelain) ]] || { print -u2 'Commit the verified source before publishing a release.'; exit 1; }
     git fetch -q origin
@@ -39,8 +43,8 @@ rm -rf "$release_dir"
 mkdir -p "$release_dir"
 ditto -c -k --sequesterRsrc --keepParent build/RayCompanion.app "$release_dir/RayCompanion.zip"
 cp Resources/ReleaseNotes.html "$release_dir/RayCompanion.html"
-"$sparkle_dir/generate_appcast" --account "$account" --maximum-deltas 0 --embed-release-notes --download-url-prefix "https://github.com/techwithanirudh/raycompanion/releases/download/v$version/" --link 'https://github.com/techwithanirudh/raycompanion' "$release_dir"
-"$sparkle_dir/sign_update" --account "$account" --verify "$release_dir/appcast.xml"
+"$sparkle_dir/generate_appcast" "${sparkle_key[@]}" --maximum-deltas 0 --embed-release-notes --download-url-prefix "https://github.com/techwithanirudh/raycompanion/releases/download/v$version/" --link 'https://github.com/techwithanirudh/raycompanion' "$release_dir"
+"$sparkle_dir/sign_update" "${sparkle_key[@]}" --verify "$release_dir/appcast.xml"
 # After the appcast, so generate_appcast never lists the disk image as a second archive.
 staging=$(mktemp -d)
 ditto build/RayCompanion.app "$staging/RayCompanion.app"
