@@ -23,6 +23,7 @@ struct AIChatTests {
             return
         }
         await localTools()
+        instructionsNameTools()
         toolCallsRouteByExactOfferedName()
         theLocalHandleIsReserved()
         await theLocalToolServerRecoversAndCancels()

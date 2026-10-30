@@ -257,8 +257,8 @@ final class AIChatCoordinator {
             let sent = chat.send(
                 address.rest, using: try provider(for: chat, scopedTo: address.slug),
                 model: model(for: chat), webSearch: webSearch(for: chat),
-                instructions: instructions, contextBudget: contextBudget(for: chat),
-                toolScope: address.slug)
+                instructions: instructions(for: chat, scopedTo: address.slug),
+                contextBudget: contextBudget(for: chat), toolScope: address.slug)
             // Named while the answer streams, so the sidebar has a title before the reply ends.
             if sent { nameIfNeeded(chat) }
             return sent
@@ -276,7 +276,8 @@ final class AIChatCoordinator {
             chat.regenerate(
                 using: try provider(for: chat, scopedTo: scope),
                 model: model(for: chat), webSearch: webSearch(for: chat),
-                instructions: instructions, contextBudget: contextBudget(for: chat))
+                instructions: instructions(for: chat, scopedTo: scope),
+                contextBudget: contextBudget(for: chat))
         } catch {
             chat.report(error.localizedDescription)
         }
@@ -286,10 +287,21 @@ final class AIChatCoordinator {
         core.aiSettings.webSearchEnabled && capabilities(for: chat).webSearch
     }
 
-    private var instructions: String? {
+    private func instructions(for chat: AIChatState, scopedTo slug: String?) -> String? {
         AIInstructions.compose(
             userPrompt: core.aiSettings.systemPrompt,
-            isEnabled: core.aiSettings.systemPromptEnabled)
+            isEnabled: core.aiSettings.systemPromptEnabled,
+            toolSources: toolSources(for: chat, scopedTo: slug))
+    }
+
+    private func toolSources(for chat: AIChatState, scopedTo slug: String?) -> [String] {
+        let local = core.localTools
+        guard capabilities(for: chat).tools, chat.toolScope.allows(AILocalTools.handle),
+            !local.tools(scopedTo: slug).isEmpty
+        else { return [] }
+        let extensions = core.aiExtensionTools
+        return ["a calculator", "file search and reading in allowed folders", "the selected text"]
+            + extensions.extensions.filter { extensions.enabledNames.contains($0.name) }.map(\.title)
     }
 
     /// A turn's route and its tools: a CLI with its own client is handed servers, others the loop.

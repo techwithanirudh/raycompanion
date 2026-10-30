@@ -27,7 +27,24 @@ extension AIChatTests {
             client.onNotification = { method, params in runner.handle(method: method, params: params) }
             runner.connect = { servers in try await client.start(toolServers: servers); return [] }
             let session = AIToolServerSession(rounds: 3, servers: { [server] }, consent: { _ in true })
-            let request = AIRequest(messages: [AIMessage(role: .user, text: "Use the calculator tool to evaluate 2 * (3 + 4). Do not calculate it yourself.")])
+            let prompt = ProcessInfo.processInfo.environment["RAYCOMPANION_CODEX_TOOL_PROBE_PROMPT"]
+                ?? "Use the calculator tool to evaluate 2 * (3 + 4). Do not calculate it yourself."
+            let environment = ProcessInfo.processInfo.environment
+            // The turns before "turn on klack" in the reported chat, where the model had already refused.
+            let history: [AIMessage] = environment["RAYCOMPANION_CODEX_TOOL_PROBE_HISTORY"] == "1" ? [
+                AIMessage(role: .user, text: "can you use extensions"),
+                AIMessage(role: .assistant, text: "I can't install or use extensions from this chat. Tell me which extension or app you mean, and I'll guide you through using it."),
+                AIMessage(role: .user, text: "Use a browser extension"),
+                AIMessage(role: .assistant, text: "Which browser are you using—Safari, Chrome, or Firefox? Also, what should the extension do?"),
+            ] : []
+            let instructions = environment["RAYCOMPANION_CODEX_TOOL_PROBE_NOTE"] == "1"
+                ? AIInstructions.compose(
+                    userPrompt: nil, isEnabled: false,
+                    toolSources: ["a calculator", "file search and reading in allowed folders", "the selected text"]
+                        + extensions.map(\.title))
+                : nil
+            let request = AIRequest(
+                instructions: instructions, messages: history + [AIMessage(role: .user, text: prompt)])
             for try await event in runner.stream(request, model: "gpt-5.6-luna", effort: "medium", toolServers: session) {
                 print("EVENT: \(event)")
             }
